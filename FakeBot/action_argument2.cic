@@ -1,0 +1,74 @@
+/************************************
+ *
+ * File : [TASK_NAME]
+ * Date : [DATE]
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#pragma once
+#include <iostream>
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_arg1;
+STATIC int port_arg2;
+// ##DEFINE_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_arg1 = PORT_INITIALIZE(TASK_ID, "arg1");
+    port_arg2 = PORT_INITIALIZE(TASK_ID, "arg2");
+// ##INIT_PORT_SECTION::END
+
+    // TODO: task initialize code
+
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int numOfRead = 0;
+    int arg1 = 0;
+    int arg2 = 0;
+    UFPort_ReadFromQueue(port_arg1, (unsigned char *)&arg1, sizeof(arg1), 0 , &numOfRead);
+    UFPort_ReadFromQueue(port_arg2, (unsigned char *)&arg2, sizeof(arg2), 0 , &numOfRead);
+
+    std::cout << "TASK_NAME=" << TASK_NAME << ", arg1=" <<  arg1 << ", arg2=" <<  arg2 << std::endl;
+}
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END
+
