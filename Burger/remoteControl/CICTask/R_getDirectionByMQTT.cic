@@ -96,15 +96,15 @@ TASK_GO
     //std::cout << msg->get_topic() << ": " << msg->to_string() << std::endl;
     
     std::string payload = msg->to_string();
-    if (!payload.compare("f")){
+    if (!payload.compare("FORWARD")){
         direction = FORWARD_;
-    }else if(!payload.compare("r")){
+    }else if(!payload.compare("RIGHT")){
         direction = RIGHT_;
-    }else if(!payload.compare("b")){
+    }else if(!payload.compare("BACKWARD")){
         direction = BACKWARD_;
-    }else if(!payload.compare("l")){
+    }else if(!payload.compare("LEFT")){
         direction = LEFT_;
-    }else if(!payload.compare("s")){
+    }else if(!payload.compare("STOP")){
         direction = STOP_;
     }
 
