@@ -2,19 +2,19 @@
 
 <cic_manual name="attack">
   <setting_list>
-    <setting cycle="10" unit="us" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="ProcessNetwork" />
+    <setting cycle="0" unit="us" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="DataFlow" />
   </setting_list>
   <task_list>
-    <task name="O_attack" type="Computational">
+    <task name="dualLED" type="Computational">
       <config>
-        <location x="188" y="132" width="80" height="40" />
-        <parameter name="CICFile" value="O_attack.cic" />
+        <location x="156" y="228" width="80" height="40" />
+        <parameter name="CICFile" value="O_dualLED.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
-        <parameter name="Deadline" value="100" />
-        <parameter name="DeadlineUnit" value="ms" />
-        <parameter name="Period" value="100" />
-        <parameter name="PeriodUnit" value="ms" />
+        <parameter name="Deadline" value="10" />
+        <parameter name="DeadlineUnit" value="s" />
+        <parameter name="Period" value="1" />
+        <parameter name="PeriodUnit" value="s" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
         <parameter name="CompileFlags" value="" />
@@ -34,10 +34,43 @@
       <portMap_list />
       <libraryPort_list />
       <multicast_port_list />
-      <extraSetting_list>
-        <extraSetting type="Extra Header" name="led/LED.h" />
-        <extraSetting type="Extra Source" name="led/LED.cpp" />
-      </extraSetting_list>
+      <extraSetting_list />
+      <control priority="0" controller="true">
+        <control_params />
+        <slaves />
+      </control>
+      <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+    </task>
+    <task name="buzzer" type="Computational">
+      <config>
+        <location x="156" y="112" width="80" height="40" />
+        <parameter name="CICFile" value="O_buzzer.cic" />
+        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="HasInternalStates" value="Yes" />
+        <parameter name="Deadline" value="10" />
+        <parameter name="DeadlineUnit" value="s" />
+        <parameter name="Period" value="5" />
+        <parameter name="PeriodUnit" value="s" />
+        <parameter name="Priority" value="1" />
+        <parameter name="Language" value="C++" />
+        <parameter name="CompileFlags" value="" />
+        <parameter name="LinkFlags" value="" />
+        <parameter name="HasMTM" value="No" />
+        <parameter name="HasSubGraph" value="No" />
+        <parameter name="IsDependency" value="No" />
+        <parameter name="LoopType" value="NONE" />
+        <parameter name="LoopCount" value="0" />
+        <parameter name="IsLoopSubTask" value="No" />
+        <parameter name="IsDesignatedTask" value="No" />
+        <parameter name="SubgraphProperty" value="Dataflow" />
+        <parameter name="Description" value="" />
+      </config>
+      <inport_list />
+      <outport_list />
+      <portMap_list />
+      <libraryPort_list />
+      <multicast_port_list />
+      <extraSetting_list />
       <control priority="0" controller="true">
         <control_params />
         <slaves />
