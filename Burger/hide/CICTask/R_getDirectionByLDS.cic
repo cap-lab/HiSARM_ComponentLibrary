@@ -15,6 +15,10 @@
 
 // ##DEFINE_SECTION::START
 #define ANGLE_TO_RADIAN(angle) ((angle)*3141.59 / 180000)
+#define MAX_LINEAR_VELOCITY 0.22
+#define MAX_ANGULAR_VELOCITY 2.84
+#define INITIAL_LINEAR_X (MAX_LINEAR_VELOCITY/3)
+#define INITIAL_ANGULAR_Z (MAX_ANGULAR_VELOCITY)
 // ##DEFINE_SECTION::END
 
 
@@ -30,9 +34,9 @@ STATIC int port_velocity;
 
 enum DIRECTION {
     FORWARD_,
-    RIGHT_,
-    BACKWARD_,
     LEFT_,
+    BACKWARD_,
+    RIGHT_,
     STOP_
 };
 
@@ -43,10 +47,11 @@ typedef struct _ControlVelocity{
 
 static LiPkg *pkg;
 static CmdInterfaceLinux cmd_port(8); //lds_version = 8
+static ControlVelocity vel;
 
 std::vector<int> getAroundDistance(const FrameData &data);
 int getDirection(const std::vector<int> &around_distance);
-void convertDirectionToMotorVelocity(const int direction, ControlVelocity &vel);
+void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 /////////////////////////////////////
 // init code
@@ -85,6 +90,8 @@ TASK_INIT
         // std::cout << "LiDAR started successfully " << std::endl;
     }
     //////////////////////// init LDS ///////////////////////////
+
+    vel = {0, 0};
 }
 
 
@@ -95,28 +102,42 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
-    ControlVelocity vel = {0, 0};
     if (pkg->IsFrameReady()){
         FrameData data = pkg->GetFrameData();
-        /*
-        struct FrameData
-        {
-            float angle_min;  //angle
-            float angle_max;  //angle
-            uint32_t len;
-            std::vector<uint16_t> distance; //mm
-            std::vector<uint8_t> intensities;
-        };
-        */
-        float angle_min = ANGLE_TO_RADIAN(data.angle_min);
-        float angle_max = ANGLE_TO_RADIAN(data.angle_max);
-        float angle_increment = (angle_max - angle_min) / data.len;
-
         std::vector<int> around_distance=getAroundDistance(data);
         int direction = getDirection(around_distance);
+        
+        /*
+        std::cout << "front : " << around_distance[0] << std::flush;
+        std::cout << "\tright : " << around_distance[1] << std::flush;
+        std::cout << "\tback : " << around_distance[2] << std::flush;
+        std::cout << "\tleft : " << around_distance[3] << std::endl;
+        switch (direction)
+        {
+        case FORWARD_:
+            std::cout << "FORWARD_" << std::endl;
+            break;
+        case RIGHT_:
+            std::cout << "RIGHT_" << std::endl;
+            break;
+        case BACKWARD_:
+            std::cout << "BACKWARD_" << std::endl;
+            break;
+        case LEFT_:
+            std::cout << "LEFT_" << std::endl;
+            break;
+        case STOP_:
+            std::cout << "STOP_" << std::endl;
+            break;
+        default:
+            break;
+        }
+        
+        std::cout << std::endl;
+        std::cout << std::endl;
+        */
+
         convertDirectionToMotorVelocity(direction, vel);
-    }else{
-        std::cout << "Can't find LiDAR" << std::endl;
     }
 
     int numOfWrite;
@@ -125,35 +146,35 @@ TASK_GO
 
 
 std::vector<int> getAroundDistance(const FrameData &data){
-    //distance = {front, right, back, left}
-    std::vector<int> around_distance={8000, 8000, 8000, 8000}; //max_distance = 8m
-    for (int i = 0; i < data.len; i++){
+    float angle_increment = (data.angle_max - data.angle_min) / data.len;
+    float angle_point = data.angle_min; //1st point's angle
+
+    std::vector<int> around_distance={8000, 8000, 8000, 8000}; //max_distance = 8m, distance = {front, left, back, right}
+    for (int i = 0; i < (int)data.len; i++){
         // check one of 10 points because there are too many points.
-        if (i%10==0){ 
+        if (i%5==0){ 
+            angle_point += (angle_increment*5);
             if(data.intensities[i]>100){ //if data is reliable
-                float angle_point = (angle_min + i*angle_increment)%3.14159;
-                if(angle_point < 0.39 || 2.75 < angle_point){ //front
-                    around_distance[0] = std::min(around_distance[0], data.distance[i])
-                    break;
-                }else if( 0.39 < angle_point < 1.17 ){ //right
-                    around_distance[1] = std::min(around_distance[1], data.distance[i])
-                    break;
-                }else if( 1.17 < angle_point < 1.96 ){ //back
-                    around_distance[2] = std::min(around_distance[2], data.distance[i])
-                    break;
-                }else { //left
-                    around_distance[3] = std::min(around_distance[3], data.distance[i])
+                if(angle_point < 45 || 315 < angle_point){ //front
+                    around_distance[0] = (around_distance[0] < data.distance[i]) ? around_distance[0] : data.distance[i];
+                }else if( 45 < angle_point && angle_point < 135 ){ //right
+                    around_distance[1] = (around_distance[1] < data.distance[i]) ? around_distance[1] : data.distance[i];
+                }else if( 135 < angle_point && angle_point < 225 ){ //back
+                    around_distance[2] = (around_distance[2] < data.distance[i]) ? around_distance[2] : data.distance[i];
+                }else if( 225 < angle_point && angle_point < 315 ){ //left
+                    around_distance[3] = (around_distance[3] < data.distance[i]) ? around_distance[3] : data.distance[i];
                 }
             }
         }
     }
+
     return around_distance;
 }
 
 
 int getDirection(const std::vector<int> &around_distance){
-    int nearest_direction =  min_element(v.begin(), v.end()) - v.begin();
-    if(around_distance[nearest_direction] <250){
+    int nearest_direction =  std::min_element(around_distance.begin(), around_distance.end()) - around_distance.begin();
+    if(around_distance[nearest_direction] <200){
         return STOP_;
     }else{
         return nearest_direction;
@@ -165,27 +186,27 @@ void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel)
     switch(direction)
     {        
         case STOP_:
-            std:: cout << "STOP" << std::endl;           
+            //std:: cout << "STOP" << std::endl;           
             vel.linear_x = 0;
             vel.angular_z = 0;
             break;
         case FORWARD_:
-            std:: cout << "FORWARD" << std::endl;
+            //std:: cout << "FORWARD" << std::endl;
             vel.linear_x = INITIAL_LINEAR_X;
             vel.angular_z = 0;
             break;
         case BACKWARD_:
-            std:: cout << "BACKWARD" << std::endl;
+            //std:: cout << "BACKWARD" << std::endl;
             vel.linear_x = -1 * INITIAL_LINEAR_X;
             vel.angular_z = 0;
             break;
         case LEFT_:
-            std:: cout << "LEFT" << std::endl;
+            //std:: cout << "LEFT" << std::endl;
             vel.linear_x = 0;
             vel.angular_z = INITIAL_ANGULAR_Z/7;
             break;
         case RIGHT_:
-            std:: cout << "RIGHT" << std::endl;
+            //std:: cout << "RIGHT" << std::endl;
             vel.linear_x = 0;
             vel.angular_z = -1 * INITIAL_ANGULAR_Z/7;
             break;   

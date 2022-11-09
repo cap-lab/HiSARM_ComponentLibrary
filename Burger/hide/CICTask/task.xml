@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<cic_manual name="trackingDemo">
+<cic_manual name="hide">
   <setting_list>
     <setting cycle="0" unit="s" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="DataFlow" />
   </setting_list>
@@ -39,9 +39,9 @@
       <libraryPort_list />
       <multicast_port_list />
       <extraSetting_list>
-        <extraSetting type="Extra Header" name="motor/turtlebot3_burger.h" />
-        <extraSetting type="Extra Header" name="motor/turtlebot3_motor_driver.h" />
-        <extraSetting type="Extra Source" name="motor/turtlebot3_motor_driver.cpp" />
+        <extraSetting type="Extra Header" name="turtlebot3_burger.h" />
+        <extraSetting type="Extra Header" name="turtlebot3_motor_driver.h" />
+        <extraSetting type="Extra Source" name="turtlebot3_motor_driver.cpp" />
       </extraSetting_list>
       <control priority="0" controller="false">
         <control_params />
@@ -51,7 +51,7 @@
     </task>
     <task name="R_getDirectionByLDS" type="Computational">
       <config>
-        <location x="192" y="128" width="80" height="40" />
+        <location x="196" y="128" width="80" height="40" />
         <parameter name="CICFile" value="R_getDirectionByLDS.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
@@ -62,7 +62,7 @@
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
         <parameter name="CompileFlags" value="" />
-        <parameter name="LinkFlags" value="" />
+        <parameter name="LinkFlags" value="-lpthread -ludev" />
         <parameter name="HasMTM" value="No" />
         <parameter name="HasSubGraph" value="No" />
         <parameter name="IsDependency" value="No" />
@@ -83,15 +83,15 @@
       <libraryPort_list />
       <multicast_port_list />
       <extraSetting_list>
-        <extraSetting type="Extra Source" name="lds/cmd_interface_linux.cpp" />
-        <extraSetting type="Extra Header" name="lds/cmd_interface_linux.h" />
-        <extraSetting type="Extra Source" name="lds/lipkg.cpp" />
-        <extraSetting type="Extra Header" name="lds/lipkg.h" />
-        <extraSetting type="Extra Header" name="lds/pointdata.h" />
-        <extraSetting type="Extra Source" name="lds/slbf.cpp" />
-        <extraSetting type="Extra Header" name="lds/slbf.h" />
-        <extraSetting type="Extra Source" name="lds/transform.cpp" />
-        <extraSetting type="Extra Header" name="lds/transform.h" />
+        <extraSetting type="Extra Header" name="pointdata.h" />
+        <extraSetting type="Extra Header" name="cmd_interface_linux.h" />
+        <extraSetting type="Extra Source" name="cmd_interface_linux.cpp" />
+        <extraSetting type="Extra Header" name="lipkg.h" />
+        <extraSetting type="Extra Source" name="lipkg.cpp" />
+        <extraSetting type="Extra Header" name="slbf.h" />
+        <extraSetting type="Extra Source" name="slbf.cpp" />
+        <extraSetting type="Extra Header" name="transform.h" />
+        <extraSetting type="Extra Source" name="transform.cpp" />
       </extraSetting_list>
       <control priority="0" controller="true">
         <control_params />
@@ -104,7 +104,7 @@
   <channel_list>
     <channel src_task="R_getDirectionByLDS" src_port="velocity" dst_task="O_wheelControl" dst_port="velocity" size="16" init_size="0" sampleType="" sampleSize="1">
       <edge_list>
-        <edge id="0" x="272" y="148" />
+        <edge id="0" x="276" y="148" />
         <edge id="1" x="472" y="148" />
       </edge_list>
     </channel>
