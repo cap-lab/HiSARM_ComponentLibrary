@@ -25,11 +25,15 @@ TASK_CODE_BEGIN
 
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_color;
+STATIC int port_target;
+STATIC int port_found;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 static int color;
+static int target;
+static int found;
 
 
 /////////////////////////////////////
@@ -40,13 +44,17 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     port_color = PORT_INITIALIZE(TASK_ID, "color");
+    port_target = PORT_INITIALIZE(TASK_ID, "target");
+    port_found = PORT_INITIALIZE(TASK_ID, "found");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-    color = 100;  //init with random value
+    color = 100; 
+    target = 101;
+    found = 0; //false
 }
 
 
@@ -59,8 +67,14 @@ TASK_GO
     // TODO: task main code
     int dataLength;
     UFPort_ReadFromQueue(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);    
+    UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
+    
+    if(target == color){ //color(read from sensor), target(received by user)
+        found=1;
+    }
 
-    std::cout << "color : " << color << std::endl;
+    //std::cout << "color : " << color << std::endl;
+    UFPort_WriteToBuffer(port_found, (unsigned char *)&found, sizeof(int), 0 , &dataLength);    
 }
 
 
