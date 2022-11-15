@@ -1,0 +1,128 @@
+/************************************
+ *
+ * File : checkDistanceByLDS.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <stdio.h>
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_frontDistance;
+// ##DEFINE_PORT_SECTION::END
+
+static LiPkg *pkg;
+static CmdInterfaceLinux cmd_port(8); //lds_version = 8
+
+int getFrontDistance(const FrameData &data);
+static int front_distance;
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_frontDistance = PORT_INITIALIZE(TASK_ID, "frontDistance");
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+
+    //////////////////////// init LDS ///////////////////////////
+    pkg = new LD08_LiPkg;    
+    std::vector<std::pair<std::string, std::string>> device_list;
+    std::string port_name;
+    cmd_port.GetCmdDevices(device_list);
+    for (auto n : device_list){
+        // std::cout << n.first << "    " << n.second << std::endl;
+        if (strstr(n.second.c_str(), "CP2102")){
+        port_name = n.first;
+        }
+    }
+
+    if (port_name.empty() == false){
+        // std::cout << "FOUND LiDAR" << std::endl;
+        cmd_port.SetReadCallback([&pkg](const char *byte, size_t len){
+            if(pkg->Parse((uint8_t*)byte, len)){
+                pkg->AssemblePacket();  
+            } 
+        });
+    }
+
+    if (cmd_port.Open(port_name)){
+        // std::cout << "LiDAR started successfully " << std::endl;
+    }
+    //////////////////////// init LDS ///////////////////////////
+    
+    front_distance = 8000;
+
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    if (pkg->IsFrameReady()){
+        FrameData data = pkg->GetFrameData();
+        front_distance=getFrontDistance(data);
+    }
+
+    int numOfWrite;
+    UFPort_WriteToQueue(port_frontDistance, (unsigned char *)&front_distance, sizeof(int), 0, &numOfWrite);
+}
+
+
+int getFrontDistance(const FrameData &data){
+    float angle_increment = (data.angle_max - data.angle_min) / data.len;
+    float angle_point = data.angle_min; //1st point's angle
+
+    int front_distance=8000; //max_distance = 8m, distance = {front, left, back, right}
+    int checkPointInterval = 3;
+    for (int i = 0; i < (int)data.len; i++){
+        // check one of 10 points because there are too many points.
+        if (i%checkPointInterval==0){ 
+            angle_point += (angle_increment*checkPointInterval);
+            if(data.intensities[i]>100){ //if data is reliable
+                if(angle_point < 45 || 315 < angle_point){ //front
+                    front_distance = (front_distance < data.distance[i]) ? front_distance : data.distance[i];
+                }
+            }
+        }
+    }
+
+    return front_distance;
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END

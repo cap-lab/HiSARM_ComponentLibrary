@@ -1,0 +1,92 @@
+/************************************
+ *
+ * File : R_makeDecision.cic
+ * Date : Nov 11, 2022 10:55 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+
+// ##DEFINE_SECTION::START
+#define YELLOW 4
+#define RED 3
+#define BLACK 2
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_color;
+STATIC int port_target;
+STATIC int port_found;
+// ##DEFINE_PORT_SECTION::END
+
+// ##DEFINE_MULTICAST_PORT_SECTION::START
+// ##DEFINE_MULTICAST_PORT_SECTION::END
+static int color;
+static int target;
+static int found;
+
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_color = PORT_INITIALIZE(TASK_ID, "color");
+    port_target = PORT_INITIALIZE(TASK_ID, "target");
+    port_found = PORT_INITIALIZE(TASK_ID, "found");
+// ##INIT_PORT_SECTION::END
+
+// ##INIT_MULTICAST_PORT_SECTION::START
+// ##INIT_MULTICAST_PORT_SECTION::END
+
+    // TODO: task initialize code
+    color = 100; 
+    target = 101;
+    found = 0; //false
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int dataLength;
+    UFPort_ReadFromQueue(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);    
+    UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
+    
+    if(target == color){ //color(read from sensor), target(received by user)
+        found=1;
+    }
+
+    //std::cout << "color : " << color << std::endl;
+    UFPort_WriteToBuffer(port_found, (unsigned char *)&found, sizeof(int), 0 , &dataLength);    
+}
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END

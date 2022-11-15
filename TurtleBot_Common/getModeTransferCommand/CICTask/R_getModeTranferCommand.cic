@@ -1,0 +1,118 @@
+/************************************
+ *
+ * File : checkDistanceByLDS.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <cstdlib>
+#include <string>
+#include <cctype>
+#include <thread>
+#include <chrono>
+#define PAHO_MQTTPP_VERSIONS
+#include "mqtt/async_client.h"
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_command;
+// ##DEFINE_PORT_SECTION::END
+
+static const std::string SERVER_ADDRESS = "192.168.50.162:1883";
+static const std::string CLIENT_ID = "paho_cpp_async_subcribe_cmd";
+static const std::string TOPIC = "command";
+static mqtt::async_client cli(SERVER_ADDRESS, CLIENT_ID);
+
+enum MODE {
+    RC,
+    START,
+    FINISH
+};
+static int command;
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_command = PORT_INITIALIZE(TASK_ID, "command");
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    auto connOpts = mqtt::connect_options_builder().clean_session(false).finalize();
+    try {
+        // Start consumer before connecting to make sure to not miss messages
+        cli.start_consuming();
+        auto tok = cli.connect(connOpts);
+        auto rsp = tok->get_connect_response();
+        cli.subscribe(TOPIC, 1)->wait();  //QOS = 1;
+            
+        //std::cout << "MQTT subscriber ready." << std::endl;
+        std::cout << "Waiting for messages on topic: '" << TOPIC << "'" << std::endl;
+    }
+    catch (const mqtt::exception& exc) {
+        std::cerr << "\n  " << exc << std::endl;
+    }
+    
+    command=RC;
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    
+    auto msg = cli.consume_message();
+    //std::cout << msg->get_topic() << ": " << msg->to_string() << std::endl;
+    
+    std::string payload = msg->to_string();
+    if (!payload.compare("RC")){
+        command = RC;
+    }else if(!payload.compare("START")){
+        command = START;
+    }else if(!payload.compare("FINISH")){
+        command = FINISH;
+    }
+
+    int numOfWrite;
+    UFPort_WriteToBuffer(port_command, (unsigned char *)&command, sizeof(int), 0, &numOfWrite);
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+    try {
+        if (cli.is_connected()) {
+            std::cout << "\nShutting down and disconnecting from the MQTT server..." << std::flush;
+            cli.unsubscribe(TOPIC)->wait();
+            cli.stop_consuming();
+            cli.disconnect()->wait();
+            std::cout << "OK" << std::endl;
+        }
+    }
+    catch (const mqtt::exception& exc) {
+        std::cerr << exc << std::endl;
+    }
+}
+
+TASK_CODE_END
