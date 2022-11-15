@@ -50,7 +50,7 @@
     </task>
     <task name="R_shareWithOthers" type="Computational">
       <config>
-        <location x="436" y="152" width="80" height="60" />
+        <location x="440" y="136" width="80" height="60" />
         <parameter name="CICFile" value="R_shareWithOthers.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
@@ -81,7 +81,7 @@
         </port>
       </inport_list>
       <outport_list>
-        <port id="0" export="true" name="found" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="0" export="true" name="isFound" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
@@ -104,7 +104,7 @@
     <channel src_task="O_searchObject" src_port="color" dst_task="R_shareWithOthers" dst_port="color" size="4" init_size="0" sampleType="" sampleSize="1">
       <edge_list>
         <edge id="0" x="268" y="172" />
-        <edge id="1" x="436" y="172" />
+        <edge id="1" x="440" y="156" />
       </edge_list>
     </channel>
   </channel_list>
