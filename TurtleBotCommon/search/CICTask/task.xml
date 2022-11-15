@@ -7,13 +7,13 @@
   <task_list>
     <task name="O_searchObject" type="Computational">
       <config>
-        <location x="112" y="180" width="80" height="40" />
+        <location x="188" y="152" width="80" height="40" />
         <parameter name="CICFile" value="O_searchObject.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
-        <parameter name="Deadline" value="100" />
+        <parameter name="Deadline" value="50" />
         <parameter name="DeadlineUnit" value="ms" />
-        <parameter name="Period" value="100" />
+        <parameter name="Period" value="50" />
         <parameter name="PeriodUnit" value="ms" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
@@ -21,7 +21,7 @@
         <parameter name="LinkFlags" value="" />
         <parameter name="HasMTM" value="No" />
         <parameter name="HasSubGraph" value="No" />
-        <parameter name="IsDependency" value="No" />
+        <parameter name="IsDependency" value="Yes" />
         <parameter name="LoopType" value="NONE" />
         <parameter name="LoopCount" value="0" />
         <parameter name="IsLoopSubTask" value="No" />
@@ -44,10 +44,13 @@
         <slaves />
       </control>
       <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
     </task>
     <task name="R_shareWithOthers" type="Computational">
       <config>
-        <location x="488" y="180" width="80" height="40" />
+        <location x="428" y="168" width="80" height="40" />
         <parameter name="CICFile" value="R_shareWithOthers.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
@@ -61,7 +64,7 @@
         <parameter name="LinkFlags" value="" />
         <parameter name="HasMTM" value="No" />
         <parameter name="HasSubGraph" value="No" />
-        <parameter name="IsDependency" value="No" />
+        <parameter name="IsDependency" value="Yes" />
         <parameter name="LoopType" value="NONE" />
         <parameter name="LoopCount" value="0" />
         <parameter name="IsLoopSubTask" value="No" />
@@ -84,14 +87,17 @@
         <slaves />
       </control>
       <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Linux" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
     </task>
   </task_list>
   <library_list />
   <channel_list>
     <channel src_task="O_searchObject" src_port="color" dst_task="R_shareWithOthers" dst_port="color" size="4" init_size="0" sampleType="" sampleSize="1">
       <edge_list>
-        <edge id="0" x="192" y="200" />
-        <edge id="1" x="488" y="200" />
+        <edge id="0" x="268" y="172" />
+        <edge id="1" x="428" y="188" />
       </edge_list>
     </channel>
   </channel_list>

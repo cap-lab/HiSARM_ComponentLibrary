@@ -21,7 +21,7 @@
         <parameter name="LinkFlags" value="" />
         <parameter name="HasMTM" value="No" />
         <parameter name="HasSubGraph" value="No" />
-        <parameter name="IsDependency" value="No" />
+        <parameter name="IsDependency" value="Yes" />
         <parameter name="LoopType" value="NONE" />
         <parameter name="LoopCount" value="0" />
         <parameter name="IsLoopSubTask" value="No" />
@@ -40,6 +40,9 @@
         <slaves />
       </control>
       <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
     </task>
     <task name="buzzer" type="Computational">
       <config>
@@ -57,7 +60,7 @@
         <parameter name="LinkFlags" value="" />
         <parameter name="HasMTM" value="No" />
         <parameter name="HasSubGraph" value="No" />
-        <parameter name="IsDependency" value="No" />
+        <parameter name="IsDependency" value="Yes" />
         <parameter name="LoopType" value="NONE" />
         <parameter name="LoopCount" value="0" />
         <parameter name="IsLoopSubTask" value="No" />
@@ -76,6 +79,9 @@
         <slaves />
       </control>
       <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
     </task>
   </task_list>
   <library_list />

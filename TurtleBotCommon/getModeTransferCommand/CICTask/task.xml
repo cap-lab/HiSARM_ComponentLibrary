@@ -7,7 +7,7 @@
   <task_list>
     <task name="R_getModeTransferCommand" type="Computational">
       <config>
-        <location x="196" y="124" width="80" height="40" />
+        <location x="192" y="124" width="80" height="40" />
         <parameter name="CICFile" value="R_getModeTranferCommand.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
@@ -21,7 +21,7 @@
         <parameter name="LinkFlags" value="-lpaho-mqttpp3 -lpaho-mqtt3as -lpthread" />
         <parameter name="HasMTM" value="No" />
         <parameter name="HasSubGraph" value="No" />
-        <parameter name="IsDependency" value="No" />
+        <parameter name="IsDependency" value="Yes" />
         <parameter name="LoopType" value="NONE" />
         <parameter name="LoopCount" value="0" />
         <parameter name="IsLoopSubTask" value="No" />
@@ -44,6 +44,9 @@
         <slaves />
       </control>
       <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Linux" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
     </task>
   </task_list>
   <library_list />

@@ -47,7 +47,7 @@ TASK_INIT
 
     // TODO: task initialize code
    colorSensor.begin(colorOLLOPort, COLOR_SENSOR);
-   color = UNKNOWN;
+   color = 100; //random value
 }
 
 

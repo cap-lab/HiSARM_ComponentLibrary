@@ -31,7 +31,6 @@ static LiPkg *pkg;
 static CmdInterfaceLinux cmd_port(8); //lds_version = 8
 
 int getFrontDistance(const FrameData &data);
-
 static int front_distance;
 
 /////////////////////////////////////

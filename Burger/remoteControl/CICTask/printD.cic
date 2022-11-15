@@ -1,7 +1,7 @@
 /************************************
  *
- * File : R_makeDecision.cic
- * Date : Nov 11, 2022 10:55 AM
+ * File : printD.cic
+ * Date : Nov 7, 2022 3:21 PM
  *
 *************************************/
 
@@ -11,10 +11,12 @@
 #include <iostream>
 
 // ##DEFINE_SECTION::START
-#define UNKNOWN 8
-#define BLUE 0
-#define YELLOW 6
 // ##DEFINE_SECTION::END
+
+typedef struct _ControlVelocity{
+    double linear_x;
+    double angular_z;
+} ControlVelocity;
 
 
 TASK_CODE_BEGIN
@@ -24,13 +26,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_color;
+STATIC int port_direction;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
-static int color;
-
 
 /////////////////////////////////////
 // init code
@@ -39,14 +39,14 @@ static int color;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    port_color = PORT_INITIALIZE(TASK_ID, "color");
+    port_direction = PORT_INITIALIZE(TASK_ID, "direction");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-    color = 0; 
+
 }
 
 
@@ -57,12 +57,14 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
-    int dataLength;
-    if((MQ_AVAILABLE(port_color) > 0)){
-        UFPort_ReadFromQueue(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);    
-    }
+    int dataWritten;
+    int direction = 0;
+    static ControlVelocity vel = {0, 0};
+    UFPort_ReadFromQueue(port_direction, (unsigned char *)&vel, sizeof(ControlVelocity), 0 , &dataWritten);    
+    
+    std::cout << "printD" << std::endl;
+    std::cout << vel.linear_x <<'\t' << vel.angular_z << std::endl;
 
-    std::cout << "color : " << color << std::endl;
 }
 
 
