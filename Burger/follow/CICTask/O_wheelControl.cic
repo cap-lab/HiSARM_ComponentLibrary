@@ -31,8 +31,7 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_distance;
-STATIC int port_direction;
+STATIC int port_finalDirection;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
@@ -56,12 +55,11 @@ typedef struct _ControlVelocity{
 } ControlVelocity;
 
 static int direction;
-static int distance;
 static ControlVelocity vel;
 
 void controlMoter();
 void startDynamixelControlInterrupt();
-convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
+void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 /////////////////////////////////////
 // init code
@@ -70,8 +68,7 @@ convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    port_distance = PORT_INITIALIZE(TASK_ID, "distance");
-    port_direction = PORT_INITIALIZE(TASK_ID, "direction");
+    port_finalDirection = PORT_INITIALIZE(TASK_ID, "finalDirection");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
@@ -81,7 +78,6 @@ TASK_INIT
     motor_driver.init(NAME);
     startDynamixelControlInterrupt();
 
-    distance = 8000;
     direction = STOP_;
     vel={0,0};
 }
@@ -108,19 +104,11 @@ TASK_GO
 {
     // TODO: task main code
     int dataWritten;
-    if((MQ_AVAILABLE(port_distance) > 0)){
-        UFPort_ReadFromQueue(port_distance, (unsigned char *)&distance, sizeof(int), 0 , &dataWritten);    
+    if((MQ_AVAILABLE(port_finalDirection) > 0)){
+        UFPort_ReadFromQueue(port_finalDirection, (unsigned char *)&direction, sizeof(int), 0 , &dataWritten);    
     }
 
-    if((MQ_AVAILABLE(port_direction) > 0)){
-        UFPort_ReadFromQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataWritten);    
-    }
-
-    if (distance < 300){
-        direction = STOP_;
-    }
-
-    convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
+    convertDirectionToMotorVelocity(direction, vel);
 
     goal_velocity[LINEAR]  = vel.linear_x;
     goal_velocity[ANGULAR]  = vel.angular_z;
@@ -155,7 +143,7 @@ void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel)
             vel.angular_z = -1 * INITIAL_ANGULAR_Z/7;
             break;   
         default:
-            std:: cout << "Wheel Control : direction is not correct. " << std::endl;
+            //std:: cout << "Wheel Control : direction is not correct. " << std::endl;
             break;
     }
 }

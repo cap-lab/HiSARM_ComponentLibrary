@@ -24,15 +24,25 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_distance;
+STATIC int port_direction;
+STATIC int port_finalDirection;
 // ##DEFINE_PORT_SECTION::END
 
 static LiPkg *pkg;
 static CmdInterfaceLinux cmd_port(8); //lds_version = 8
 
+int getFrontDistance(const FrameData &data);
 static int front_distance;
+static int direction;
 
-std::vector<int> getAroundDistance(const FrameData &data);
+enum DIRECTION {
+    FORWARD_,
+    LEFT_,
+    BACKWARD_,
+    RIGHT_,
+    STOP_
+};
+
 
 /////////////////////////////////////
 // init code
@@ -41,7 +51,8 @@ std::vector<int> getAroundDistance(const FrameData &data);
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    port_distance = PORT_INITIALIZE(TASK_ID, "distance");
+    port_direction = PORT_INITIALIZE(TASK_ID, "direction");
+    port_finalDirection = PORT_INITIALIZE(TASK_ID, "finalDirection");
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
@@ -73,6 +84,7 @@ TASK_INIT
     //////////////////////// init LDS ///////////////////////////
 
     front_distance=8000;
+    direction = STOP_;
 }
 
 
@@ -82,42 +94,42 @@ TASK_INIT
 
 TASK_GO
 {
+    int dataLength;
+    UFPort_ReadFromBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+    
     // TODO: task main code
     if (pkg->IsFrameReady()){
         FrameData data = pkg->GetFrameData();
-        std::vector<int> around_distance=getAroundDistance(data);
-        front_distance = around_distance[0];
+        front_distance=getFrontDistance(data);
+    }
+    
+    if (front_distance < 300){
+        direction = STOP_;
     }
 
-    int numOfWrite;
-    UFPort_WriteToQueue(port_distance, (unsigned char *)&front_distance, sizeof(int), 0, &numOfWrite);
+    UFPort_WriteToQueue(port_finalDirection, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
 }
 
 
-std::vector<int> getAroundDistance(const FrameData &data){
+int getFrontDistance(const FrameData &data){
     float angle_increment = (data.angle_max - data.angle_min) / data.len;
     float angle_point = data.angle_min; //1st point's angle
 
-    std::vector<int> around_distance={8000, 8000, 8000, 8000}; //max_distance = 8m, distance = {front, left, back, right}
+    int front_distance=8000; //max_distance = 8m, distance = {front, left, back, right}
+    int checkPointInterval = 3;
     for (int i = 0; i < (int)data.len; i++){
         // check one of 10 points because there are too many points.
-        if (i%5==0){ 
-            angle_point += (angle_increment*5);
+        if (i%checkPointInterval==0){ 
+            angle_point += (angle_increment*checkPointInterval);
             if(data.intensities[i]>100){ //if data is reliable
                 if(angle_point < 45 || 315 < angle_point){ //front
-                    around_distance[0] = (around_distance[0] < data.distance[i]) ? around_distance[0] : data.distance[i];
-                }else if( 45 < angle_point && angle_point < 135 ){ //right
-                    around_distance[1] = (around_distance[1] < data.distance[i]) ? around_distance[1] : data.distance[i];
-                }else if( 135 < angle_point && angle_point < 225 ){ //back
-                    around_distance[2] = (around_distance[2] < data.distance[i]) ? around_distance[2] : data.distance[i];
-                }else if( 225 < angle_point && angle_point < 315 ){ //left
-                    around_distance[3] = (around_distance[3] < data.distance[i]) ? around_distance[3] : data.distance[i];
+                    front_distance = (front_distance < data.distance[i]) ? front_distance : data.distance[i];
                 }
             }
         }
     }
 
-    return around_distance;
+    return front_distance;
 }
 
 
