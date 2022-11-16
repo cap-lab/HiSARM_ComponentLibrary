@@ -1,0 +1,165 @@
+#include "UFTimer.h"
+#include "leader.h"
+#include <unistd.h>
+
+STATIC int port_group_state;
+
+TASK_CODE_BEGIN
+
+TASK_INIT
+{
+	SEMO_LOG_INFO("INIT");
+    UFPort_Initialize(THIS_TASK_ID, "group_state", &port_group_state);
+}
+
+semo_int32 checkLeaderHeartBeat(semo_int32 group_id) {
+    semo_int32 leader = MAX_ROBOT_ID;
+    if (LIBCALL(leader_lib, avail_heartbeat_leader, group_id)) {
+        leader = LIBCALL(leader_lib, get_heartbeat_leader, group_id);
+    }
+    return leader;
+}
+
+void updateTime(semo_int32 group_id) {
+    semo_int64 current_time;
+    UFTimer_GetCurrentTime(THIS_TASK_ID, &currentTime);
+    LIBCALL(leader_lib, set_last_time, group_id, current_time);
+}
+
+semo_int64 checkTime(semo_int32 group_id) {
+    semo_int64 last_time;
+    semo_int64 current_time;
+    UFTimer_GetCurrentTime(THIS_TASK_ID, &currentTime);
+    last_time = LIBCALL(leader_lib, get_last_time, group_id);
+    return current_time - last_time;
+}
+
+void checkLeaderSelected(semo_int32 group_id) {
+    int dataLen;
+    semo_int32 leader_id = checkLeaderHeartBeat(group_id);
+    if (leader_id <= MY_ROBOT_ID) {
+        semo_int32 current_leader_id = LIBCALL(leader_lib, get_leader, group_id);
+        LIBCALL(leader_lib, set_leader_selection_state, group_id, LEADER_SELECTION_SELECTED);
+        if (leader_id < current_leader_id) {
+            LIBCALL(leader_lib, set_leader, group_id, leader_id);
+        }
+    }
+}
+
+semo_int32 checkLeaderCandidate(semo_int32 group_id) {
+    semo_int32 robot_id;
+    semo_int32 leader = LIBCALL(leader_lib, get_leader, group_id);
+    if(LIBCALL(leader_lib, avail_ROBOT_ID_leader, group_id))
+    {
+        LIBCALL(leader_lib, get_ROBOT_ID_leader, &robot_id);
+        if(leader > robotId)
+        {
+            LIBCALL(leader_lib, set_leader, group_id, robot_id);
+        }
+    }
+    return leader;
+}
+
+void emitHeartBeat(semo_int32 group_id) {
+    updateTime(group_id);
+    LIBCALL(leader_lib, set_heartbeat_leader, ALL, THIS_ROBOT_ID);
+}
+
+void setRobotAsLeader(semo_int32 group_id) {
+    LIBCALL(leader_lib, set_leader_selection_state, group_id, LEADER_SELECTION_SELECTED);
+    emitHeatBeat(group_id);
+}
+
+void leaderSelect(semo_int32 group_id) {
+    semo_int32 leader = checkLeaderCandidate(group_id);
+    if(leader == THIS_ROBOT_ID) 
+    {
+    	if(checkTime(group_id) > LEADER_SELECTION_THRESHOLD) {
+    	    setRobotAsLeader(group_id);
+    	} else {
+            LIBCALL(leader_lib, set_ROBOT_ID_service, ALL, THIS_ROBOT_ID);
+        }
+    } else {
+        checkLeaderSelected(group_id);
+    }
+}
+
+semo_int32 checkNewLeader(semo_int32 group_id){
+    semo_int32 changed = FALSE;
+    semo_int32 robot_id;
+    semo_int32 cur_leader_id;
+    robot_id = checkLeaderCandidate(group_id);
+    if (robot_id < MY_ROBOT_ID){
+        LIBCALL(leader_lib, set_leader_selection_state, group_id, LEADER_SELECTION_NOT_SELECTED);
+        LIBCALL(leader_lib, set_leader, group_id, robot_id);
+        changed = TRUE;
+    }
+    robot_id = checkLeaderHeartBeat(group_id);
+    cur_leader_id = LIBCALL(leader_lib, get_leader, group_id);
+    if (robot_id < cur_leader_id) {
+        LIBCALL(leader_lib, set_leader_selection_state, group_id, LEADER_SELECTION_SELECTED);
+        LIBCALL(leader_lib, set_leader, group_id, robot_id);
+        changed = TRUE;
+    }
+    return changed;
+}
+
+void checkLeaderMalfunctioned(semo_int32 group_id) {
+    int leader_id = checkLeaderHeartBeat(group_id);
+    if (leader_id == MAX_ROBOT_ID) {
+        if (checkTime(group_id) > LEADER_HEARTBEAT_THRESHOLD) {
+            LIBCALL(leader_lib, set_leader_selection_state, group_id, LEADER_SELECTION_NOT_SELECTED);
+        }
+    } else {
+        updateTime(group_id); 
+    }
+}
+
+TASK_GO
+{
+    uem_result result;
+    semo_int32 count = 0;
+    semo_int32 group_state[2];
+    int length = 0;
+
+    UFPort_GetNumOfAvailableData(port_gorup_id, 0, &count);
+    for (; count > 0 ; count--) {
+        result = UFPort_ReadFromQueue(port_group_id, group_state, sizeof(group_state), 0, &length);
+        if (group_state[1] == TRUE) {
+            LIBCALL(leader_lib, set_leader_selection_state, group_id, LEADER_SELECTION_NOT_SELECTED);
+        } else {
+            LIBCALL(leader_lib, set_leader_selection_state, group_id, LEADER_SELECTION_STOP);
+        }
+    }
+
+    for (count = 0 ; count < group_num ; count++) {
+        LEADER_SELECTION_STATE leader_state = LIBCALL(leader_lib, get_leader_selection_state, group_id[count]);
+        switch(leader_state) {
+            case LEADER_SELECTION_STOP:
+                break;
+            case LEADER_SELECTION_NOT_SELECTED:
+	            leaderSelect(group_id[count]);
+                break;
+            case LEADER_SELECTION_SELECTED:
+                semo_int32 leader = LIBCALL(leader_lib, get_leader, group_id_list[count]);
+                if (leader == MY_ROBOT_ID) {
+                    semo_int32 changed = checkNewLeader(group_id_list[count]);
+                    if (changed == FALSE) {
+                        emitHeartBeat(group_id_list[count]);
+                    }
+                } else {
+                    checkLeaderMalfunctioned(group_id_list[count]);
+                }
+                break;
+            default:
+                SEMO_LOG_ERROR("wrong leader state (group: %d, state: %d)", group_id_list[count], leader_state);
+        }
+    }
+}
+
+TASK_WRAPUP
+{
+	SEMO_LOG_INFO("WRAP UP");
+}
+
+TASK_CODE_END
