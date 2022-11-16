@@ -64,8 +64,8 @@ TASK_GO
     int robotId=0;
     
     if (LIBCALL(libGroupSum, avail_GROUP_SUM_action)){
-        LIBCALL(libGroupSum, get_GROUP_SUM_action, &robotId, &receivedSharedValue);
-        std::cout << "TASK_NAME=" << TASK_NAME << ", robotId=" <<  THIS_ROBOT_ID << ", sender_robotId=" <<  robotId << ", get sharedValue=" <<  sharedValue << std::endl;
+        LIBCALL(libGroupSum, get_GROUP_SUM_action, &receivedSharedValue);
+        std::cout << "TASK_NAME=" << TASK_NAME << ", robotId=" <<  THIS_ROBOT_ID <<  ", get sharedValue=" <<  sharedValue << std::endl;
 
         if(sharedValue < receivedSharedValue) sharedValue = receivedSharedValue;
     }
