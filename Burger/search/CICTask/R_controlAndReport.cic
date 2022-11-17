@@ -1,20 +1,27 @@
 /************************************
  *
- * File : detectMotion.cic
- * Date : Nov 11, 2022 10:35 AM
+ * File : R_controlAndReport.cic
+ * Date : Nov 17, 2022 10:38 AM
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <OLLO.h>
 
 // ##DEFINE_SECTION::START
-#define colorOLLOPort 1
-
+#define YELLOW 4
+#define RED 3
+#define BLACK 2
 // ##DEFINE_SECTION::END
 
+enum DIRECTION {
+    FORWARD_,
+    LEFT_,
+    BACKWARD_,
+    RIGHT_,
+    STOP_
+};
 
 TASK_CODE_BEGIN
 
@@ -24,13 +31,16 @@ TASK_CODE_BEGIN
 
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_color;
+STATIC int port_distance;
+STATIC int port_direction;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
-static OLLO colorSensor;          // OLLO.cpp (.arduino15/~~~~)
-static int color; 
+static int color;
+static int distance;
+static int direction;
 
 /////////////////////////////////////
 // init code
@@ -40,14 +50,18 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     port_color = PORT_INITIALIZE(TASK_ID, "color");
+    port_distance = PORT_INITIALIZE(TASK_ID, "distance");
+    port_direction = PORT_INITIALIZE(TASK_ID, "direction");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-   colorSensor.begin(colorOLLOPort, COLOR_SENSOR);
-   color = 100; //random value
+    color=0;
+    distance=8000;
+    direction=STOP_;
+
 }
 
 
@@ -58,9 +72,21 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
-    color = colorSensor.read(colorOLLOPort, COLOR_SENSOR);
-    int writtenLength;
-    UFPort_WriteToBuffer(port_color, (unsigned char*)&color, sizeof(int), 0, &writtenLength);
+    int dataLength;
+    UFPort_ReadFromBuffer(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
+    UFPort_ReadFromBuffer(port_distance, (unsigned char *)&distance, sizeof(int), 0 , &dataLength);
+    
+    if (color == YELLOW){
+        direction=STOP_;
+    }else{
+        if(distance < 300){
+            direction=LEFT_;
+        }else{
+            direction=FORWARD_;
+        }
+    }
+    
+    UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataLength);
 }
 
 

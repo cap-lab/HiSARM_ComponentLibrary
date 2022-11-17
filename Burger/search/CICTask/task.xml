@@ -5,9 +5,109 @@
     <setting cycle="0" unit="s" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="DataFlow" />
   </setting_list>
   <task_list>
+    <task name="O_wheelControl" type="Computational">
+      <config>
+        <location x="620" y="96" width="80" height="40" />
+        <parameter name="CICFile" value="O_wheelControl.cic" />
+        <parameter name="RunCondition" value="data-driven" />
+        <parameter name="HasInternalStates" value="Yes" />
+        <parameter name="Deadline" value="10" />
+        <parameter name="DeadlineUnit" value="ms" />
+        <parameter name="Period" value="10" />
+        <parameter name="PeriodUnit" value="ms" />
+        <parameter name="Priority" value="1" />
+        <parameter name="Language" value="C++" />
+        <parameter name="CompileFlags" value="" />
+        <parameter name="LinkFlags" value="" />
+        <parameter name="HasMTM" value="No" />
+        <parameter name="HasSubGraph" value="No" />
+        <parameter name="IsDependency" value="Yes" />
+        <parameter name="LoopType" value="NONE" />
+        <parameter name="LoopCount" value="0" />
+        <parameter name="IsLoopSubTask" value="No" />
+        <parameter name="IsDesignatedTask" value="No" />
+        <parameter name="SubgraphProperty" value="Dataflow" />
+        <parameter name="Description" value="" />
+      </config>
+      <inport_list>
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </inport_list>
+      <outport_list />
+      <portMap_list />
+      <libraryPort_list />
+      <multicast_port_list />
+      <extraSetting_list>
+        <extraSetting type="Extra Header" name="turtlebot3_burger.h" />
+        <extraSetting type="Extra Header" name="turtlebot3_motor_driver.h" />
+        <extraSetting type="Extra Source" name="turtlebot3_motor_driver.cpp" />
+      </extraSetting_list>
+      <control priority="0" controller="false">
+        <control_params />
+        <slaves />
+      </control>
+      <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
+    </task>
+    <task name="R_getDistanceByLDS" type="Computational">
+      <config>
+        <location x="132" y="252" width="80" height="40" />
+        <parameter name="CICFile" value="R_getDistanceByLDS.cic" />
+        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="HasInternalStates" value="Yes" />
+        <parameter name="Deadline" value="200" />
+        <parameter name="DeadlineUnit" value="ms" />
+        <parameter name="Period" value="200" />
+        <parameter name="PeriodUnit" value="ms" />
+        <parameter name="Priority" value="1" />
+        <parameter name="Language" value="C++" />
+        <parameter name="CompileFlags" value="" />
+        <parameter name="LinkFlags" value="-lpthread -ludev" />
+        <parameter name="HasMTM" value="No" />
+        <parameter name="HasSubGraph" value="No" />
+        <parameter name="IsDependency" value="Yes" />
+        <parameter name="LoopType" value="NONE" />
+        <parameter name="LoopCount" value="0" />
+        <parameter name="IsLoopSubTask" value="No" />
+        <parameter name="IsDesignatedTask" value="No" />
+        <parameter name="SubgraphProperty" value="Dataflow" />
+        <parameter name="Description" value="" />
+      </config>
+      <inport_list />
+      <outport_list>
+        <port id="0" export="false" name="distance" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </outport_list>
+      <portMap_list />
+      <libraryPort_list />
+      <multicast_port_list />
+      <extraSetting_list>
+        <extraSetting type="Extra Header" name="pointdata.h" />
+        <extraSetting type="Extra Header" name="cmd_interface_linux.h" />
+        <extraSetting type="Extra Source" name="cmd_interface_linux.cpp" />
+        <extraSetting type="Extra Header" name="lipkg.h" />
+        <extraSetting type="Extra Source" name="lipkg.cpp" />
+        <extraSetting type="Extra Header" name="slbf.h" />
+        <extraSetting type="Extra Source" name="slbf.cpp" />
+        <extraSetting type="Extra Header" name="transform.h" />
+        <extraSetting type="Extra Source" name="transform.cpp" />
+      </extraSetting_list>
+      <control priority="0" controller="true">
+        <control_params />
+        <slaves />
+      </control>
+      <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Linux" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
+    </task>
     <task name="O_searchObject" type="Computational">
       <config>
-        <location x="188" y="152" width="80" height="40" />
+        <location x="136" y="120" width="80" height="40" />
         <parameter name="CICFile" value="O_searchObject.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
@@ -31,7 +131,7 @@
       </config>
       <inport_list />
       <outport_list>
-        <port id="0" export="false" name="color" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="color" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
@@ -48,16 +148,16 @@
         <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
       </HardwareDependency>
     </task>
-    <task name="R_shareWithOthers" type="Computational">
+    <task name="R_controlAndReport" type="Computational">
       <config>
-        <location x="440" y="136" width="80" height="60" />
-        <parameter name="CICFile" value="R_shareWithOthers.cic" />
-        <parameter name="RunCondition" value="data-driven" />
+        <location x="344" y="164" width="80" height="60" />
+        <parameter name="CICFile" value="R_controlAndReport.cic" />
+        <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
-        <parameter name="Deadline" value="1" />
-        <parameter name="DeadlineUnit" value="us" />
-        <parameter name="Period" value="1" />
-        <parameter name="PeriodUnit" value="us" />
+        <parameter name="Deadline" value="200" />
+        <parameter name="DeadlineUnit" value="ms" />
+        <parameter name="Period" value="200" />
+        <parameter name="PeriodUnit" value="ms" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
         <parameter name="CompileFlags" value="" />
@@ -73,15 +173,15 @@
         <parameter name="Description" value="" />
       </config>
       <inport_list>
-        <port id="0" export="false" name="color" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="color" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
-        <port id="1" export="true" name="target" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="1" export="false" name="distance" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </inport_list>
       <outport_list>
-        <port id="0" export="true" name="isFound" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
@@ -101,10 +201,22 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="O_searchObject" src_port="color" dst_task="R_shareWithOthers" dst_port="color" size="4" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="O_searchObject" src_port="color" dst_task="R_controlAndReport" dst_port="color" size="4" init_size="0" sampleType="" sampleSize="1">
       <edge_list>
-        <edge id="0" x="268" y="172" />
-        <edge id="1" x="440" y="156" />
+        <edge id="0" x="216" y="140" />
+        <edge id="1" x="344" y="184" />
+      </edge_list>
+    </channel>
+    <channel src_task="R_getDistanceByLDS" src_port="distance" dst_task="R_controlAndReport" dst_port="distance" size="4" init_size="0" sampleType="" sampleSize="1">
+      <edge_list>
+        <edge id="0" x="212" y="272" />
+        <edge id="1" x="344" y="204" />
+      </edge_list>
+    </channel>
+    <channel src_task="R_controlAndReport" src_port="direction" dst_task="O_wheelControl" dst_port="direction" size="4" init_size="0" sampleType="" sampleSize="1">
+      <edge_list>
+        <edge id="0" x="424" y="184" />
+        <edge id="1" x="620" y="116" />
       </edge_list>
     </channel>
   </channel_list>
