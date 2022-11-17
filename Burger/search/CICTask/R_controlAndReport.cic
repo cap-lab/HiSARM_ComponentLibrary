@@ -32,7 +32,9 @@ TASK_CODE_BEGIN
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_color;
 STATIC int port_distance;
+STATIC int port_target;
 STATIC int port_direction;
+STATIC int port_isFound;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
@@ -41,6 +43,8 @@ STATIC int port_direction;
 static int color;
 static int distance;
 static int direction;
+static int target;
+static int isFound;
 
 /////////////////////////////////////
 // init code
@@ -51,7 +55,9 @@ TASK_INIT
 // ##INIT_PORT_SECTION::START
     port_color = PORT_INITIALIZE(TASK_ID, "color");
     port_distance = PORT_INITIALIZE(TASK_ID, "distance");
+    port_target = PORT_INITIALIZE(TASK_ID, "target");
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
+    port_isFound = PORT_INITIALIZE(TASK_ID, "isFound");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
@@ -61,7 +67,8 @@ TASK_INIT
     color=0;
     distance=8000;
     direction=STOP_;
-
+    target=0;
+    isFound=0;
 }
 
 
@@ -73,11 +80,13 @@ TASK_GO
 {
     // TODO: task main code
     int dataLength;
+    UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_distance, (unsigned char *)&distance, sizeof(int), 0 , &dataLength);
     
-    if (color == YELLOW){
+    if (color == target){
         direction=STOP_;
+        isFound=1;
     }else{
         if(distance < 300){
             direction=LEFT_;
@@ -87,6 +96,7 @@ TASK_GO
     }
     
     UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataLength);
+    UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);
 }
 
 

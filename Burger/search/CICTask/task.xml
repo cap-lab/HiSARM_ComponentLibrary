@@ -150,7 +150,7 @@
     </task>
     <task name="R_controlAndReport" type="Computational">
       <config>
-        <location x="344" y="164" width="80" height="60" />
+        <location x="344" y="164" width="80" height="80" />
         <parameter name="CICFile" value="R_controlAndReport.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
@@ -179,9 +179,15 @@
         <port id="1" export="false" name="distance" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
+        <port id="2" export="true" name="target" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
       </inport_list>
       <outport_list>
         <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+        <port id="1" export="true" name="isFound" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
