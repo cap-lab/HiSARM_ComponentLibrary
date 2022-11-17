@@ -61,8 +61,6 @@ TASK_GO
     UFPort_ReadFromBuffer(port_arg1, (unsigned char *)&arg1, sizeof(arg1), 0 , &numOfReadWrite);
     UFPort_ReadFromBuffer(port_max, (unsigned char *)&max, sizeof(max), 0 , &numOfReadWrite);
 
-    int robotId=0;
-    
     if (LIBCALL(libGroupSum, avail_GROUP_SUM_action)){
         LIBCALL(libGroupSum, get_GROUP_SUM_action, &receivedSharedValue);
         std::cout << "TASK_NAME=" << TASK_NAME << ", robotId=" <<  THIS_ROBOT_ID <<  ", get sharedValue=" <<  sharedValue << std::endl;
