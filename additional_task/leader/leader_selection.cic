@@ -49,7 +49,7 @@ semo_int32 checkLeaderCandidate(semo_int32 group_id) {
     semo_int32 leader = LIBCALL(leader, get_leader, group_id);
     if(LIBCALL(leader, avail_robot_id_leader, group_id))
     {
-        LIBCALL(leader, get_robot_id_leader, robot_id);
+        robot_id = LIBCALL(leader, get_robot_id_leader, group_id);
         if(leader > robot_id)
         {
             LIBCALL(leader, set_leader, group_id, robot_id);
