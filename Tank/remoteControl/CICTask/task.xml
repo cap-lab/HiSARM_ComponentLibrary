@@ -7,9 +7,9 @@
   <task_list>
     <task name="R_getDirectionByMQTT" type="Computational">
       <config>
-        <location x="192" y="128" width="80" height="40" />
+        <location x="176" y="128" width="80" height="40" />
         <parameter name="CICFile" value="R_getDirectionByMQTT.cic" />
-        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="100" />
         <parameter name="DeadlineUnit" value="ms" />
@@ -31,7 +31,7 @@
       </config>
       <inport_list />
       <outport_list>
-        <port id="0" export="true" name="direction" type="fifo" sample_size="16" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
@@ -50,7 +50,7 @@
     </task>
     <task name="O_wheelControl" type="Computational">
       <config>
-        <location x="548" y="148" width="80" height="40" />
+        <location x="488" y="128" width="80" height="40" />
         <parameter name="CICFile" value="O_wheelControl.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
@@ -73,7 +73,7 @@
         <parameter name="Description" value="" />
       </config>
       <inport_list>
-        <port id="0" export="false" name="direction" type="fifo" sample_size="16" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </inport_list>
@@ -98,10 +98,10 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="R_getDirectionByMQTT" src_port="direction" dst_task="O_wheelControl" dst_port="direction" size="16" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="R_getDirectionByMQTT" src_port="direction" dst_task="O_wheelControl" dst_port="direction" size="4" init_size="0" sampleType="" sampleSize="1">
       <edge_list>
-        <edge id="0" x="272" y="148" />
-        <edge id="1" x="548" y="168" />
+        <edge id="0" x="256" y="148" />
+        <edge id="1" x="488" y="148" />
       </edge_list>
     </channel>
   </channel_list>

@@ -17,10 +17,6 @@
 #define PAHO_MQTTPP_VERSIONS
 #include "mqtt/async_client.h"
 
-#define MAX_LINEAR_VELOCITY 0.22
-#define MAX_ANGULAR_VELOCITY 2.84
-#define INITIAL_LINEAR_X (MAX_LINEAR_VELOCITY/3)
-#define INITIAL_ANGULAR_Z (MAX_ANGULAR_VELOCITY)
 
 TASK_CODE_BEGIN
 
@@ -46,13 +42,6 @@ enum DIRECTION {
 };
 static int direction;
 
-typedef struct _ControlVelocity{
-    double linear_x;
-    double angular_z;
-} ControlVelocity;
-static ControlVelocity vel;
-
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 /////////////////////////////////////
 // init code
@@ -63,10 +52,9 @@ TASK_INIT
 // ##INIT_PORT_SECTION::START
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
 // ##INIT_PORT_SECTION::END
-    direction=STOP_;
-    vel = {0,0};
     
     // TODO: task initialize code
+
     auto connOpts = mqtt::connect_options_builder().clean_session(false).finalize();
     try {
         // Start consumer before connecting to make sure to not miss messages
@@ -74,13 +62,15 @@ TASK_INIT
         auto tok = cli.connect(connOpts);
         auto rsp = tok->get_connect_response();
         cli.subscribe(TOPIC, 1)->wait();  //QOS = 1;
-            
-        std::cout << "MQTT subscriber ready." << std::endl;
+
         std::cout << "Waiting for messages on topic: '" << TOPIC << "'" << std::endl;
     }
     catch (const mqtt::exception& exc) {
         std::cerr << "\n  " << exc << std::endl;
     }
+
+
+    direction=STOP_;
 }
 
 
@@ -90,65 +80,38 @@ TASK_INIT
 
 TASK_GO
 {
-    // TODO: task main code
-    
+    // auto start = std::chrono::high_resolution_clock::now();
+    // TODO: task main code  
     auto msg = cli.consume_message();
     //std::cout << msg->get_topic() << ": " << msg->to_string() << std::endl;
     
+    int numOfWrite;
     std::string payload = msg->to_string();
-    if (!payload.compare("f")){
+    if (!payload.compare("FORWARD")){
         direction = FORWARD_;
-    }else if(!payload.compare("r")){
+    }else if(!payload.compare("RIGHT")){
         direction = RIGHT_;
-    }else if(!payload.compare("b")){
+        UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
+        std::this_thread::sleep_for(std::chrono::milliseconds(3850));
+        direction = STOP_;
+    }else if(!payload.compare("BACKWARD")){
         direction = BACKWARD_;
-    }else if(!payload.compare("l")){
+    }else if(!payload.compare("LEFT")){
         direction = LEFT_;
-    }else if(!payload.compare("s")){
+        UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
+        std::this_thread::sleep_for(std::chrono::milliseconds(3850));
+        direction = STOP_;
+    }else if(!payload.compare("STOP")){
         direction = STOP_;
     }
 
-    convertDirectionToMotorVelocity(direction, vel);
-    std::cout << "getDirection By MQTT " << std::endl;
-    std::cout << "direction : " << direction <<std::endl;
-    std::cout << vel.linear_x << "\t" << vel.angular_z <<std::endl;
+    //std::cout << "payload : " << payload << std::flush;
 
-    int numOfWrite;
-    UFPort_WriteToQueue(port_direction, (unsigned char *)&vel, sizeof(ControlVelocity), 0, &numOfWrite);
-}
-
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
-    switch(direction)
-    {        
-        case STOP_:
-            //std:: cout << "STOP" << std::endl;           
-            vel.linear_x = 0;
-            vel.angular_z = 0;
-            break;
-        case FORWARD_:
-            //std:: cout << "FORWARD" << std::endl;
-            vel.linear_x = INITIAL_LINEAR_X;
-            vel.angular_z = 0;
-            break;
-        case BACKWARD_:
-            //std:: cout << "BACKWARD" << std::endl;
-            vel.linear_x = -1 * INITIAL_LINEAR_X;
-            vel.angular_z = 0;
-            break;
-        case LEFT_:
-            //std:: cout << "LEFT" << std::endl;
-            vel.linear_x = 0;
-            vel.angular_z = INITIAL_ANGULAR_Z/7;
-            break;
-        case RIGHT_:
-            //std:: cout << "RIGHT" << std::endl;
-            vel.linear_x = 0;
-            vel.angular_z = -1 * INITIAL_ANGULAR_Z/7;
-            break;   
-        default:
-            //std:: cout << "Wheel Control : direction is not correct. " << std::endl;
-            break;
-    }
+    UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
+    
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "Time taken by function: " << duration.count() << " microseconds" << std::endl;
 }
 
 

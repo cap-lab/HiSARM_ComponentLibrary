@@ -191,27 +191,27 @@ void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel)
             vel.angular_z = 0;
             break;
         case FORWARD_:
-            //std:: cout << "FORWARD" << std::endl;
-            vel.linear_x = INITIAL_LINEAR_X;
-            vel.angular_z = 0;
-            break;
-        case BACKWARD_:
             //std:: cout << "BACKWARD" << std::endl;
             vel.linear_x = -1 * INITIAL_LINEAR_X;
             vel.angular_z = 0;
             break;
-        case LEFT_:
+        case BACKWARD_:
+            //std:: cout << "FORWARD" << std::endl;
+            vel.linear_x = INITIAL_LINEAR_X;
+            vel.angular_z = 0;
+            break;
+        case RIGHT_:
             //std:: cout << "LEFT" << std::endl;
             vel.linear_x = 0;
             vel.angular_z = INITIAL_ANGULAR_Z/7;
             break;
-        case RIGHT_:
+        case LEFT_:
             //std:: cout << "RIGHT" << std::endl;
             vel.linear_x = 0;
             vel.angular_z = -1 * INITIAL_ANGULAR_Z/7;
             break;   
         default:
-            std:: cout << "Wheel Control : direction is not correct. " << std::endl;
+            //std:: cout << "Wheel Control : direction is not correct. " << std::endl;
             break;
     }
 }
