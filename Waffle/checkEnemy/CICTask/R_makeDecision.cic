@@ -23,7 +23,6 @@ TASK_CODE_BEGIN
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_motion;
 STATIC int port_frontDistance;
-STATIC int port_enemy;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
@@ -42,7 +41,6 @@ TASK_INIT
 // ##INIT_PORT_SECTION::START
     port_motion = PORT_INITIALIZE(TASK_ID, "motion");
     port_frontDistance = PORT_INITIALIZE(TASK_ID, "frontDistance");
-    port_enemy = PORT_INITIALIZE(TASK_ID, "enemy");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
@@ -91,7 +89,7 @@ TASK_GO
     //std::cout << "   front_distance : " << frontDistance << std::flush;
     //std::cout << "   findEnemy : " << findEnemy << std::endl;
 
-    UFPort_WriteToQueue(port_enemy, (unsigned char *)&findEnemy, sizeof(int), 0, &dataLength);
+    //UFPort_WriteToQueue(port_enemy, (unsigned char *)&findEnemy, sizeof(int), 0, &dataLength);
 }
 
 
