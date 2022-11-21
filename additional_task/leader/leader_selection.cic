@@ -118,8 +118,9 @@ TASK_GO
     semo_int32 group_state[2];
     int count = 0;
     int length = 0;
-
-    UFPort_GetNumOfAvailableData(port_group_state, 0, &count);
+    uem_result result;
+    result = UFPort_GetNumOfAvailableData(port_group_state, 0, &count);
+    ERRIFGOTO(result, _EXIT);
     for (; count > 0 ; count--) {
         UFPort_ReadFromQueue(port_group_state, (unsigned char*) group_state, sizeof(group_state), 0, &length);
         if (group_state[1] == TRUE) {
@@ -151,6 +152,8 @@ TASK_GO
                 SEMO_LOG_ERROR("wrong leader state (group: %d, state: %d)", group_list[count], leader_state);
         }
     }
+_EXIT:
+    return;
 }
 
 TASK_WRAPUP
