@@ -9,6 +9,9 @@
 // include header section
 /////////////////////////////////////
 #include <iostream>
+#include <string>
+#include <thread>
+#include <chrono>
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
@@ -51,6 +54,12 @@ TASK_INIT
 // ##INIT_PORT_SECTION::START
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
 // ##INIT_PORT_SECTION::END
+
+    std::string cmd = "v4l2rtspserver -W 480 -H 480 -F 15 -P 8554 /dev/video0 &";
+    //run process with shell
+    system(cmd.c_str());
+
+    std::this_thread::sleep_for(std::chrono::seconds(2));
     
     // TODO: task initialize code
     cap.open("rtsp://127.0.0.1:8554/unicast");
@@ -146,6 +155,10 @@ TASK_WRAPUP
     // TODO: task wrapup code
     cap.release();
     cv::destroyAllWindows();
+    
+	std::string cmd = "pkill v4l2rtspserver";
+    system(cmd.c_str());
 }
+
 
 TASK_CODE_END
