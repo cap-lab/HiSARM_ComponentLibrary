@@ -80,38 +80,32 @@ TASK_INIT
 
 TASK_GO
 {
-    // auto start = std::chrono::high_resolution_clock::now();
-    // TODO: task main code  
-    auto msg = cli.consume_message();
-    //std::cout << msg->get_topic() << ": " << msg->to_string() << std::endl;
-    
-    int numOfWrite;
-    std::string payload = msg->to_string();
-    if (!payload.compare("FORWARD")){
-        direction = FORWARD_;
-    }else if(!payload.compare("RIGHT")){
-        direction = RIGHT_;
+    mqtt::const_message_ptr messagePointer;
+
+    if (cli.try_consume_message(&messagePointer))
+    {
+        std::string payload = messagePointer -> get_payload_str();
+        if (!payload.compare("FORWARD")){
+            direction = FORWARD_;
+        }else if(!payload.compare("RIGHT")){
+            direction = RIGHT_;
+            UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
+            std::this_thread::sleep_for(std::chrono::milliseconds(3850));
+            direction = STOP_;
+        }else if(!payload.compare("BACKWARD")){
+            direction = BACKWARD_;
+        }else if(!payload.compare("LEFT")){
+            direction = LEFT_;
+            UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
+            std::this_thread::sleep_for(std::chrono::milliseconds(3850));
+            direction = STOP_;
+        }else if(!payload.compare("STOP")){
+            direction = STOP_;
+        }
+
+        int numOfWrite;
         UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-        std::this_thread::sleep_for(std::chrono::milliseconds(3850)); //90degree
-        direction = STOP_;
-    }else if(!payload.compare("BACKWARD")){
-        direction = BACKWARD_;
-    }else if(!payload.compare("LEFT")){
-        direction = LEFT_;
-        UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-        std::this_thread::sleep_for(std::chrono::milliseconds(3850)); //90degree
-        direction = STOP_;
-    }else if(!payload.compare("STOP")){
-        direction = STOP_;
     }
-
-    //std::cout << "payload : " << payload << std::flush;
-
-    UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-    
-    // auto end = std::chrono::high_resolution_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "Time taken by function: " << duration.count() << " microseconds" << std::endl;
 }
 
 

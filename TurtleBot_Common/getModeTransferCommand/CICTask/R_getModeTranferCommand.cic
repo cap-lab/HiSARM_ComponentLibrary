@@ -28,7 +28,7 @@ STATIC int port_command;
 // ##DEFINE_PORT_SECTION::END
 
 static const std::string SERVER_ADDRESS = "192.168.50.162:1883";
-static const std::string CLIENT_ID = THIS_ROBOT_NAME;
+static const std::string CLIENT_ID = THIS_ROBOT_NAME "_cmd";
 static const std::string TOPIC = "command";
 static mqtt::async_client cli(SERVER_ADDRESS, CLIENT_ID);
 
@@ -37,7 +37,7 @@ enum MODE {
     START,
     FINISH
 };
-static int command;
+static int command=RC;
 
 /////////////////////////////////////
 // init code
@@ -48,7 +48,7 @@ TASK_INIT
 // ##INIT_PORT_SECTION::START
     port_command = PORT_INITIALIZE(TASK_ID, "command");
 // ##INIT_PORT_SECTION::END
-    
+
     // TODO: task initialize code
     auto connOpts = mqtt::connect_options_builder().clean_session(false).finalize();
     try {
@@ -64,8 +64,6 @@ TASK_INIT
     catch (const mqtt::exception& exc) {
         std::cerr << "\n  " << exc << std::endl;
     }
-    
-    command=RC;
 }
 
 
@@ -77,20 +75,24 @@ TASK_GO
 {
     // TODO: task main code
     
-    auto msg = cli.consume_message();
-    //std::cout << msg->get_topic() << ": " << msg->to_string() << std::endl;
     
-    std::string payload = msg->to_string();
-    if (!payload.compare("RC")){
-        command = RC;
-    }else if(!payload.compare("START")){
-        command = START;
-    }else if(!payload.compare("FINISH")){
-        command = FINISH;
-    }
+    mqtt::const_message_ptr messagePointer;
 
-    int numOfWrite;
-    UFPort_WriteToBuffer(port_command, (unsigned char *)&command, sizeof(int), 0, &numOfWrite);
+    if (cli.try_consume_message(&messagePointer))
+    {
+        std::string payload = messagePointer -> get_payload_str();
+        //std::string payload = msg->to_string();
+        if (!payload.compare("RC")){
+            command = RC;
+        }else if(!payload.compare("START")){
+            command = START;
+        }else if(!payload.compare("FINISH")){
+            command = FINISH;
+        }
+
+        int numOfWrite;
+        UFPort_WriteToBuffer(port_command, (unsigned char *)&command, sizeof(int), 0, &numOfWrite);
+    }
 }
 
 
