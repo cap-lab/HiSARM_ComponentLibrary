@@ -9,9 +9,23 @@
 // include header section
 /////////////////////////////////////
 #include <OLLO.h>
+#include <inttypes.h>
+#include <DynamixelSDK.h>
+#include <Arduino.h>
 
 // ##DEFINE_SECTION::START
 #define motionPortNumber 2
+
+#define WHEEL_NUM                        2
+#define LINEAR                           0
+#define ANGULAR                          1
+#define CONTROL_PERIOD                   8000
+
+#define MAX_LINEAR_VELOCITY 0.22
+#define MAX_ANGULAR_VELOCITY 2.84
+#define INITIAL_LINEAR_X (MAX_LINEAR_VELOCITY/3)
+#define INITIAL_ANGULAR_Z (MAX_ANGULAR_VELOCITY)
+
 // ##DEFINE_SECTION::END
 
 
@@ -27,6 +41,28 @@ STATIC int port_motion;
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
+
+HardwareTimer Timer(TIMER_CH1);
+Turtlebot3MotorDriver motor_driver;
+static float goal_velocity[WHEEL_NUM] = {0.0, 0.0};
+
+enum DIRECTION {
+    FORWARD_,
+    LEFT_,
+    BACKWARD_,
+    RIGHT_,
+    STOP_
+};
+
+typedef struct _ControlVelocity{
+    double linear_x;
+    double angular_z;
+} ControlVelocity;
+
+void controlMoter();
+void startDynamixelControlInterrupt();
+void turn(int direction);
+void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 static OLLO motionSensor;          // OLLO.cpp (.arduino15/~~~~) 
 
@@ -45,8 +81,66 @@ TASK_INIT
 
     // TODO: task initialize code
     motionSensor.begin(motionPortNumber, PIR_SENSOR);
-
+    
+    motor_driver.init(NAME);
+    startDynamixelControlInterrupt();
+    
+    turn(RIGHT_);
+    turn(RIGHT_);
 }
+
+void controlMoter(){
+    motor_driver.controlMotor(WHEEL_RADIUS, WHEEL_SEPARATION, goal_velocity);
+}
+
+void startDynamixelControlInterrupt(){
+    Timer.pause();
+    Timer.setPeriod(CONTROL_PERIOD);           // in microseconds
+    Timer.attachInterrupt(controlMoter);
+    Timer.refresh();
+    Timer.resume();
+}
+
+void turn(int direction){
+    ControlVelocity vel = {0, 0};
+    convertDirectionToMotorVelocity(direction, vel);
+
+    goal_velocity[LINEAR]  = vel.linear_x;
+    goal_velocity[ANGULAR]  = vel.angular_z;
+
+    delay(3850); 
+    goal_velocity[LINEAR]  = 0.0;
+    goal_velocity[ANGULAR]  = 0.0;
+}
+
+void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
+    switch(direction)
+    {        
+        case STOP_:           
+            vel.linear_x = 0;
+            vel.angular_z = 0;
+            break;
+        case FORWARD_:
+            vel.linear_x = INITIAL_LINEAR_X;
+            vel.angular_z = 0;
+            break;
+        case BACKWARD_:
+            vel.linear_x = -1 * INITIAL_LINEAR_X;
+            vel.angular_z = 0;
+            break;
+        case RIGHT_:
+            vel.linear_x = 0;
+            vel.angular_z = INITIAL_ANGULAR_Z/7*1.88;
+            break;
+        case LEFT_:
+            vel.linear_x = 0;
+            vel.angular_z = -1 * INITIAL_ANGULAR_Z/7*1.88;
+            break;   
+        default:
+            break;
+    }
+}
+
 
 
 /////////////////////////////////////
@@ -58,7 +152,7 @@ TASK_GO
     // TODO: task main code
     int motion = motionSensor.read(motionPortNumber, PIR_SENSOR);
     int writtenLength;
-    UFPort_WriteToQueue(port_motion, (unsigned char*)&motion, sizeof(int), 0, &writtenLength);
+    UFPort_WriteToBuffer(port_motion, (unsigned char*)&motion, sizeof(int), 0, &writtenLength);
 }
 
 

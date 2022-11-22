@@ -102,10 +102,10 @@ void startDynamixelControlInterrupt(){
 TASK_GO
 {
     // TODO: task main code
-    turn(LEFT_);
-    delay(3000); 
-    turn(RIGHT_);
-    delay(3000); 
+    //turn(LEFT_);
+    //delay(3000); 
+    //turn(RIGHT_);
+    //delay(3000); 
 }
 
 void turn(int direction){

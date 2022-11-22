@@ -64,12 +64,8 @@ TASK_GO
 {
     // TODO: task main code
     int dataLength;
-    if((MQ_AVAILABLE(port_motion) > 0)){
-        UFPort_ReadFromQueue(port_motion, (unsigned char *)&motion, sizeof(int), 0 , &dataLength);    
-    }
-    if((MQ_AVAILABLE(port_frontDistance) > 0)){
-        UFPort_ReadFromQueue(port_frontDistance, (unsigned char *)&frontDistance, sizeof(int), 0 , &dataLength);    
-    }
+    UFPort_ReadFromBuffer(port_motion, (unsigned char *)&motion, sizeof(int), 0 , &dataLength);    
+    UFPort_ReadFromBuffer(port_frontDistance, (unsigned char *)&frontDistance, sizeof(int), 0 , &dataLength);    
 
     if (motion==0){
         motionCount++;
@@ -87,9 +83,9 @@ TASK_GO
         findEnemy=0;
     }
     
-    //std::cout << "motion : " << motion << std::flush;
-    //std::cout << "   front_distance : " << frontDistance << std::flush;
-    //std::cout << "   findEnemy : " << findEnemy << std::endl;
+    std::cout << "motion : " << motion << std::flush;
+    std::cout << "   front_distance : " << frontDistance << std::flush;
+    std::cout << "   findEnemy : " << findEnemy << std::endl;
 
     UFPort_WriteToBuffer(port_isEnemy, (unsigned char *)&findEnemy, sizeof(int), 0, &dataLength);
 }
