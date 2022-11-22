@@ -51,20 +51,22 @@ TASK_GO
     // TODO: task main code
     int dataLength;
     int buzzer = 0;
-    UFPort_ReadFromQueue(port_buzzer, (unsigned char *)&buzzer, sizeof(int), 0, &dataLength);
-    
-    int melody[] = {  1000, 800, 600, 400, 200, 0, 1400, 1200 };
-    int noteDurations[] = {  4, 8, 8, 4, 4, 4, 4, 4};
-    
-    for (int thisNote = 0; thisNote < 8; thisNote++) {
-        int noteDuration = 1000 / noteDurations[thisNote];
-        tone(BDPIN_BUZZER, melody[thisNote], noteDuration);
+	if((MQ_AVAILABLE(port_buzzer) > 0)){
+        UFPort_ReadFromQueue(port_buzzer, (unsigned char *)&buzzer, sizeof(int), 0, &dataLength);
         
-        int pauseBetweenNotes = noteDuration * 1.30;
-        delay(pauseBetweenNotes);
-        // stop the tone playing:
-        noTone(BDPIN_BUZZER);
-    }
+        int melody[] = {  1000, 800, 600, 400, 200, 0, 1400, 1200 };
+        int noteDurations[] = {  4, 8, 8, 4, 4, 4, 4, 4};
+        
+        for (int thisNote = 0; thisNote < 8; thisNote++) {
+            int noteDuration = 1000 / noteDurations[thisNote];
+            tone(BDPIN_BUZZER, melody[thisNote], noteDuration);
+            
+            int pauseBetweenNotes = noteDuration * 1.30;
+            delay(pauseBetweenNotes);
+            // stop the tone playing:
+            noTone(BDPIN_BUZZER);
+        }
+	}
 }
 
 

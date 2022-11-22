@@ -27,7 +27,7 @@ TASK_CODE_BEGIN
 STATIC int port_distance;
 // ##DEFINE_PORT_SECTION::END
 
-static LiPkg *pkg;
+static LiPkg *pkg = NULL;
 static CmdInterfaceLinux cmd_port(8); //lds_version = 8
 
 int getFrontDistance(const FrameData &data);
@@ -40,6 +40,8 @@ enum DIRECTION {
     RIGHT_,
     STOP_
 };
+
+static int init = 0;
 
 
 /////////////////////////////////////
@@ -55,29 +57,33 @@ TASK_INIT
     // TODO: task initialize code
 
     //////////////////////// init LDS ///////////////////////////
-    pkg = new LD08_LiPkg;    
-    std::vector<std::pair<std::string, std::string>> device_list;
-    std::string port_name;
-    cmd_port.GetCmdDevices(device_list);
-    for (auto n : device_list){
-        // std::cout << n.first << "    " << n.second << std::endl;
-        if (strstr(n.second.c_str(), "CP2102")){
-        port_name = n.first;
+    if (init == 0) {
+        pkg = new LD08_LiPkg;
+        init = 1;
+
+        std::vector<std::pair<std::string, std::string>> device_list;
+        std::string port_name;
+        cmd_port.GetCmdDevices(device_list);
+        for (auto n : device_list){
+            // std::cout << n.first << "    " << n.second << std::endl;
+            if (strstr(n.second.c_str(), "CP2102")){
+            port_name = n.first;
+            }
         }
-    }
-
-    if (port_name.empty() == false){
-        // std::cout << "FOUND LiDAR" << std::endl;
-        cmd_port.SetReadCallback([&pkg](const char *byte, size_t len){
-            if(pkg->Parse((uint8_t*)byte, len)){
-                pkg->AssemblePacket();  
-            } 
-        });
-    }
-
-    if (cmd_port.Open(port_name)){
-        // std::cout << "LiDAR started successfully " << std::endl;
-    }
+    
+        if (port_name.empty() == false){
+            // std::cout << "FOUND LiDAR" << std::endl;
+            cmd_port.SetReadCallback([&pkg](const char *byte, size_t len){
+                if(pkg->Parse((uint8_t*)byte, len)){
+                    pkg->AssemblePacket();  
+                } 
+            });
+        }
+    
+        if (cmd_port.Open(port_name)){
+            // std::cout << "LiDAR started successfully " << std::endl;
+        }
+    }  
     //////////////////////// init LDS ///////////////////////////
 
     front_distance=8000;
@@ -130,7 +136,7 @@ int getFrontDistance(const FrameData &data){
 TASK_WRAPUP
 {
     // TODO: task wrapup code
-
+	//cmd_port.Close();
 }
 
 TASK_CODE_END

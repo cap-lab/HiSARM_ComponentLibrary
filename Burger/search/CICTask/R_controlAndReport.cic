@@ -94,9 +94,13 @@ TASK_GO
             direction=FORWARD_;
         }
     }
+
+	printf("color: %d, target: %d\n", color, target);
     
     UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataLength);
+    //if(isFound == 1) {
     UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);
+    //}
 }
 
 

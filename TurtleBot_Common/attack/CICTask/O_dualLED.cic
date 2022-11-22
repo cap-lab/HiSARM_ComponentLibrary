@@ -63,18 +63,19 @@ TASK_GO
     // TODO: task main code
     int dataLength;
     int led = 0;
-    UFPort_ReadFromQueue(port_led, (unsigned char *)&led, sizeof(int), 0, &dataLength);
-    
-    for (int i=0; i<4; i++){
-        digitalWrite(OLLO_P4_SIG1, HIGH);  // set to as HIGH LED is turn-off
-        digitalWrite(OLLO_P4_SIG2, HIGH);  // set to as HIGH LED is turn-off
-        delay(500);                   // Wait for 0.1 second
+	if((MQ_AVAILABLE(port_led) > 0)){
+        UFPort_ReadFromQueue(port_led, (unsigned char *)&led, sizeof(int), 0, &dataLength);
         
-        digitalWrite(OLLO_P4_SIG2, LOW);   // set to as LOW LED is turn-on
-        digitalWrite(OLLO_P4_SIG1, LOW);   // set to as LOW LED is turn-on
-        delay(500);
-    }
-      
+        for (int i=0; i<4; i++){
+            digitalWrite(OLLO_P4_SIG1, HIGH);  // set to as HIGH LED is turn-off
+            digitalWrite(OLLO_P4_SIG2, HIGH);  // set to as HIGH LED is turn-off
+            delay(500);                   // Wait for 0.1 second
+            
+            digitalWrite(OLLO_P4_SIG2, LOW);   // set to as LOW LED is turn-on
+            digitalWrite(OLLO_P4_SIG1, LOW);   // set to as LOW LED is turn-on
+            delay(500);
+        }
+	} 
 }
 
 
