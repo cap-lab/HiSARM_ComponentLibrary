@@ -17,8 +17,8 @@
         <parameter name="PeriodUnit" value="ms" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
-        <parameter name="CompileFlags" value="" />
-        <parameter name="LinkFlags" value="-lpaho-mqttpp3 -lpaho-mqtt3as -lpthread" />
+        <parameter name="CompileFlags" value="$(shell pkg-config --cflags mqtt)" />
+        <parameter name="LinkFlags" value="$(shell pkg-config --libs mqtt)" />
         <parameter name="HasMTM" value="No" />
         <parameter name="HasSubGraph" value="No" />
         <parameter name="IsDependency" value="Yes" />

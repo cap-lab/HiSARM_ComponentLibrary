@@ -29,7 +29,7 @@ STATIC int port_direction;
 // ##DEFINE_PORT_SECTION::END
 
 static const std::string SERVER_ADDRESS = "192.168.50.162:1883";
-static const std::string CLIENT_ID = "paho_cpp_async_subcribe";
+static const std::string CLIENT_ID = THIS_ROBOT_NAME;
 static const std::string TOPIC = "direction";
 static mqtt::async_client cli(SERVER_ADDRESS, CLIENT_ID);
 
