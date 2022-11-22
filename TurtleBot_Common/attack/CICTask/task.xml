@@ -91,10 +91,10 @@
         <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
       </HardwareDependency>
     </task>
-    <task name="control" type="Computational">
+    <task name="R_base" type="Computational">
       <config>
-        <location x="148" y="160" width="80" height="60" />
-        <parameter name="CICFile" value="control.cic" />
+        <location x="144" y="152" width="80" height="60" />
+        <parameter name="CICFile" value="R_base.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="5" />
@@ -140,15 +140,15 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="control" src_port="buzzer" dst_task="buzzer" dst_port="buzzer" size="4" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="R_base" src_port="buzzer" dst_task="buzzer" dst_port="buzzer" size="4" init_size="0" sampleType="" sampleSize="1">
       <edge_list>
-        <edge id="0" x="228" y="180" />
+        <edge id="0" x="224" y="172" />
         <edge id="1" x="352" y="136" />
       </edge_list>
     </channel>
-    <channel src_task="control" src_port="led" dst_task="dualLED" dst_port="led" size="4" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="R_base" src_port="led" dst_task="dualLED" dst_port="led" size="4" init_size="0" sampleType="" sampleSize="1">
       <edge_list>
-        <edge id="0" x="228" y="200" />
+        <edge id="0" x="224" y="192" />
         <edge id="1" x="352" y="252" />
       </edge_list>
     </channel>
