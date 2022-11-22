@@ -7,9 +7,9 @@
   <task_list>
     <task name="dualLED" type="Computational">
       <config>
-        <location x="156" y="228" width="80" height="40" />
+        <location x="352" y="232" width="80" height="40" />
         <parameter name="CICFile" value="O_dualLED.cic" />
-        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="10" />
         <parameter name="DeadlineUnit" value="s" />
@@ -29,7 +29,11 @@
         <parameter name="SubgraphProperty" value="Dataflow" />
         <parameter name="Description" value="" />
       </config>
-      <inport_list />
+      <inport_list>
+        <port id="0" export="false" name="led" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </inport_list>
       <outport_list />
       <portMap_list />
       <libraryPort_list />
@@ -46,9 +50,9 @@
     </task>
     <task name="buzzer" type="Computational">
       <config>
-        <location x="156" y="112" width="80" height="40" />
+        <location x="352" y="116" width="80" height="40" />
         <parameter name="CICFile" value="O_buzzer.cic" />
-        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="10" />
         <parameter name="DeadlineUnit" value="s" />
@@ -68,7 +72,11 @@
         <parameter name="SubgraphProperty" value="Dataflow" />
         <parameter name="Description" value="" />
       </config>
-      <inport_list />
+      <inport_list>
+        <port id="0" export="false" name="buzzer" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </inport_list>
       <outport_list />
       <portMap_list />
       <libraryPort_list />
@@ -83,9 +91,68 @@
         <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
       </HardwareDependency>
     </task>
+    <task name="control" type="Computational">
+      <config>
+        <location x="148" y="160" width="80" height="60" />
+        <parameter name="CICFile" value="control.cic" />
+        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="HasInternalStates" value="Yes" />
+        <parameter name="Deadline" value="5" />
+        <parameter name="DeadlineUnit" value="s" />
+        <parameter name="Period" value="5" />
+        <parameter name="PeriodUnit" value="s" />
+        <parameter name="Priority" value="1" />
+        <parameter name="Language" value="C++" />
+        <parameter name="CompileFlags" value="" />
+        <parameter name="LinkFlags" value="" />
+        <parameter name="HasMTM" value="No" />
+        <parameter name="HasSubGraph" value="No" />
+        <parameter name="IsDependency" value="Yes" />
+        <parameter name="LoopType" value="NONE" />
+        <parameter name="LoopCount" value="0" />
+        <parameter name="IsLoopSubTask" value="No" />
+        <parameter name="IsDesignatedTask" value="No" />
+        <parameter name="SubgraphProperty" value="Dataflow" />
+        <parameter name="Description" value="" />
+      </config>
+      <inport_list />
+      <outport_list>
+        <port id="0" export="false" name="buzzer" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+        <port id="1" export="false" name="led" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </outport_list>
+      <portMap_list />
+      <libraryPort_list />
+      <multicast_port_list />
+      <extraSetting_list />
+      <control priority="0" controller="true">
+        <control_params />
+        <slaves />
+      </control>
+      <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Linux" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
+    </task>
   </task_list>
   <library_list />
-  <channel_list />
+  <channel_list>
+    <channel src_task="control" src_port="buzzer" dst_task="buzzer" dst_port="buzzer" size="4" init_size="0" sampleType="" sampleSize="1">
+      <edge_list>
+        <edge id="0" x="228" y="180" />
+        <edge id="1" x="352" y="136" />
+      </edge_list>
+    </channel>
+    <channel src_task="control" src_port="led" dst_task="dualLED" dst_port="led" size="4" init_size="0" sampleType="" sampleSize="1">
+      <edge_list>
+        <edge id="0" x="228" y="200" />
+        <edge id="1" x="352" y="252" />
+      </edge_list>
+    </channel>
+  </channel_list>
   <taskLibraryConnection_list />
   <libraryLibraryConnection_list />
   <taskGroupList />

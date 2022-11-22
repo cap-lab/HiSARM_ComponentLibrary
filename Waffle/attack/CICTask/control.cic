@@ -1,18 +1,17 @@
 /************************************
  *
- * File : checkColor.cic
- * Date : May 18, 2022 8:57 PM
+ * File : control.cic
+ * Date : Nov 22, 2022 4:14 PM
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <Arduino.h>
 
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
-#define BDPIN_BUZZER            31
+
 
 TASK_CODE_BEGIN
 
@@ -22,7 +21,11 @@ TASK_CODE_BEGIN
 
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_buzzer;
+STATIC int port_led;
 // ##DEFINE_PORT_SECTION::END
+
+// ##DEFINE_MULTICAST_PORT_SECTION::START
+// ##DEFINE_MULTICAST_PORT_SECTION::END
 
 /////////////////////////////////////
 // init code
@@ -32,13 +35,14 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     port_buzzer = PORT_INITIALIZE(TASK_ID, "buzzer");
+    port_led = PORT_INITIALIZE(TASK_ID, "led");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-    pinMode(BDPIN_BUZZER, OUTPUT);
+
 }
 
 
@@ -49,24 +53,12 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
+    int buzzer = 1;
+    int led = 1;
     int dataLength;
-    int buzzer = 0;
-    UFPort_ReadFromQueue(port_buzzer, (unsigned char *)&buzzer, sizeof(int), 0, &dataLength);
-    
-    int melody[] = {  1000, 800, 600, 400, 200, 0, 1400, 1200 };
-    int noteDurations[] = {  4, 8, 8, 4, 4, 4, 4, 4};
-    
-    for (int thisNote = 0; thisNote < 8; thisNote++) {
-        int noteDuration = 1000 / noteDurations[thisNote];
-        tone(BDPIN_BUZZER, melody[thisNote], noteDuration);
-        
-        int pauseBetweenNotes = noteDuration * 1.30;
-        delay(pauseBetweenNotes);
-        // stop the tone playing:
-        noTone(BDPIN_BUZZER);
-    }
+    UFPort_WriteToQueue(port_buzzer, (unsigned char *)&buzzer, sizeof(int), 0, &dataLength);
+    UFPort_WriteToQueue(port_led, (unsigned char *)&led, sizeof(int), 0, &dataLength);
 }
-
 
 
 
