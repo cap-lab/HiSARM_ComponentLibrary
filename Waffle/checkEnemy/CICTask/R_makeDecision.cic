@@ -28,10 +28,10 @@ STATIC int port_isEnemy;
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
-static int motion;
-static int motionCount;
-static int frontDistance;
-static int findEnemy;
+static int motion = 1; //no_motion=1, motion=0
+static int motionCount = 0;
+static int frontDistance = 8000;
+static int findEnemy=0;
 
 /////////////////////////////////////
 // init code
@@ -49,10 +49,7 @@ TASK_INIT
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-    motion = 1; //no_motion=1, motion=0
-    motionCount=0;
-    frontDistance = 8000;
-    findEnemy=0;
+    
 }
 
 
@@ -74,11 +71,8 @@ TASK_GO
     }
 
     //if pir_sensor detect a motion
-    if (motionCount > 3){
-        //if distance of front object is less than 1m
-        if(frontDistance < 1000){
-            findEnemy=1;
-        }
+    if (motionCount > 1 && frontDistance < 1000){
+        findEnemy=1;
     }else{
         findEnemy=0;
     }
