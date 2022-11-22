@@ -133,7 +133,11 @@
           <rate id="0" mode="Default" rate="1" />
         </port>
       </inport_list>
-      <outport_list />
+      <outport_list>
+        <port id="0" export="true" name="isEnemy" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </outport_list>
       <portMap_list />
       <libraryPort_list />
       <multicast_port_list />
