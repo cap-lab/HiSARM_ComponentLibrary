@@ -37,8 +37,8 @@ STATIC int port_finalDirection;
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
-HardwareTimer Timer(TIMER_CH1);
-Turtlebot3MotorDriver motor_driver;
+static HardwareTimer Timer(TIMER_CH1);
+static Turtlebot3MotorDriver motor_driver;
 static float goal_velocity[WHEEL_NUM] = {0.0, 0.0};
 
 enum DIRECTION {
@@ -57,9 +57,9 @@ typedef struct _ControlVelocity{
 static int direction;
 static ControlVelocity vel;
 
-void controlMoter();
-void startDynamixelControlInterrupt();
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
+static void controlMoter();
+static void startDynamixelControlInterrupt();
+static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 /////////////////////////////////////
 // init code
@@ -82,12 +82,12 @@ TASK_INIT
     vel={0,0};
 }
 
-void controlMoter(){
+static void controlMoter(){
     motor_driver.controlMotor(WHEEL_RADIUS, WHEEL_SEPARATION, goal_velocity);
 }
 
 
-void startDynamixelControlInterrupt(){
+static void startDynamixelControlInterrupt(){
     Timer.pause();
     Timer.setPeriod(CONTROL_PERIOD);           // in microseconds
     Timer.attachInterrupt(controlMoter);
@@ -114,7 +114,7 @@ TASK_GO
     goal_velocity[ANGULAR]  = vel.angular_z;
 }
 
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
+static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
     switch(direction)
     {        
         case STOP_:

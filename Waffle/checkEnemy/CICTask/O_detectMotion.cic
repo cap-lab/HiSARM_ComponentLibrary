@@ -42,8 +42,8 @@ STATIC int port_motion;
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
-HardwareTimer Timer(TIMER_CH1);
-Turtlebot3MotorDriver motor_driver;
+static HardwareTimer Timer(TIMER_CH1);
+static Turtlebot3MotorDriver motor_driver;
 static float goal_velocity[WHEEL_NUM] = {0.0, 0.0};
 
 enum DIRECTION {
@@ -59,10 +59,10 @@ typedef struct _ControlVelocity{
     double angular_z;
 } ControlVelocity;
 
-void controlMoter();
-void startDynamixelControlInterrupt();
-void turn(int direction);
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
+static void controlMoter();
+static void startDynamixelControlInterrupt();
+static void turn(int direction);
+static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 static OLLO motionSensor;          // OLLO.cpp (.arduino15/~~~~) 
 
@@ -89,11 +89,11 @@ TASK_INIT
     turn(RIGHT_);
 }
 
-void controlMoter(){
+static void controlMoter(){
     motor_driver.controlMotor(WHEEL_RADIUS, WHEEL_SEPARATION, goal_velocity);
 }
 
-void startDynamixelControlInterrupt(){
+static void startDynamixelControlInterrupt(){
     Timer.pause();
     Timer.setPeriod(CONTROL_PERIOD);           // in microseconds
     Timer.attachInterrupt(controlMoter);
@@ -101,7 +101,7 @@ void startDynamixelControlInterrupt(){
     Timer.resume();
 }
 
-void turn(int direction){
+static void turn(int direction){
     ControlVelocity vel = {0, 0};
     convertDirectionToMotorVelocity(direction, vel);
 
@@ -113,7 +113,7 @@ void turn(int direction){
     goal_velocity[ANGULAR]  = 0.0;
 }
 
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
+static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
     switch(direction)
     {        
         case STOP_:           

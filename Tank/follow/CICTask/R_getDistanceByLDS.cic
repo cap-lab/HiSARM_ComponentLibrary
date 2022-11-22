@@ -31,7 +31,7 @@ STATIC int port_finalDirection;
 static LiPkg *pkg;
 static CmdInterfaceLinux cmd_port(8); //lds_version = 8
 
-int getFrontDistance(const FrameData &data);
+static int getFrontDistance(const FrameData &data);
 static int front_distance;
 static int direction;
 
@@ -111,7 +111,7 @@ TASK_GO
 }
 
 
-int getFrontDistance(const FrameData &data){
+static int getFrontDistance(const FrameData &data){
     float angle_increment = (data.angle_max - data.angle_min) / data.len;
     float angle_point = data.angle_min; //1st point's angle
 

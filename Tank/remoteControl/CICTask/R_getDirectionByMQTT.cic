@@ -81,6 +81,7 @@ TASK_INIT
 TASK_GO
 {
     mqtt::const_message_ptr messagePointer;
+    int numOfWrite;
 
     if (cli.try_consume_message(&messagePointer))
     {
@@ -103,7 +104,6 @@ TASK_GO
             direction = STOP_;
         }
 
-        int numOfWrite;
         UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
     }
 }
