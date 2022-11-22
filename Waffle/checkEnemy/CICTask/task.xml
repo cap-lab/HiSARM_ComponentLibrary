@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<cic_manual name="checkEnemy">
+<cic_manual name="checkEnemy" xmlns="http://iris.snu.ac.kr/UEM_Schema">
   <setting_list>
     <setting cycle="0" unit="s" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="DataFlow" />
   </setting_list>
