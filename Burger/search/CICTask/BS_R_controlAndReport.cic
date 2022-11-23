@@ -40,11 +40,11 @@ STATIC int port_isFound;
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
-static int color;
-static int distance;
-static int direction;
-static int target;
-static int isFound;
+static int color = 0;
+static int distance = 8000;
+static int direction = STOP_;
+static int target = 0;
+static int isFound = 0;
 
 /////////////////////////////////////
 // init code
@@ -64,11 +64,6 @@ TASK_INIT
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-    color=0;
-    distance=8000;
-    direction=STOP_;
-    target=0;
-    isFound=0;
 }
 
 
@@ -95,8 +90,9 @@ TASK_GO
         }
     }
 
-	printf("color: %d, target: %d\n", color, target);
+	printf("color: %d, target: %d, direction: %d, distance: %d\n", color, target, direction, distance);
     
+    //UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataLength);
     UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataLength);
     //if(isFound == 1) {
     UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);

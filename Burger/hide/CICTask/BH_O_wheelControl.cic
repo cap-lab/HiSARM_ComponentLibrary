@@ -12,10 +12,8 @@
 #include <DynamixelSDK.h>
 
 // ##DEFINE_SECTION::START
-#define WHEEL_NUM                        2
 #define LINEAR                           0
 #define ANGULAR                          1
-#define CONTROL_PERIOD                   8000
 // ##DEFINE_SECTION::END
 
 typedef struct _ControlVelocity{
@@ -29,14 +27,10 @@ TASK_CODE_BEGIN
 /*******************************************************************************
 * Declaration for Hardware Timer (Interrupt control)
 *******************************************************************************/
-static HardwareTimer Timer(TIMER_CH1);
 
 /*******************************************************************************
 * Declaration for motor
 *******************************************************************************/
-static Turtlebot3MotorDriver motor_driver;
-
-static float goal_velocity[WHEEL_NUM] = {0.0, 0.0};
 
 /////////////////////////////////////
 // global definition
@@ -55,20 +49,6 @@ STATIC ControlVelocity stControlVelocity;
 // init code
 /////////////////////////////////////
 
-static void controlMoter()
-{
-    motor_driver.controlMotor(WHEEL_RADIUS, WHEEL_SEPARATION, goal_velocity);
-}
-
-
-static void startDynamixelControlInterrupt()
-{
-    Timer.pause();
-    Timer.setPeriod(CONTROL_PERIOD);           // in microseconds
-    Timer.attachInterrupt(controlMoter);
-    Timer.refresh();
-    Timer.resume();
-}
 
 static int led_pin = 13;
 static int led_pin_user[4] = { BDPIN_LED_USER_1, BDPIN_LED_USER_2, BDPIN_LED_USER_3, BDPIN_LED_USER_4 };
@@ -85,9 +65,8 @@ TASK_INIT
 
     // TODO: task initialize code
     stControlVelocity = {0,0};
-    motor_driver.init(NAME);
     pinMode(led_pin, OUTPUT);
-    startDynamixelControlInterrupt();
+    initTurtleBotMotor();
 }
 
 
@@ -117,6 +96,7 @@ TASK_GO
         }
 		goal_velocity[LINEAR]  = stControlVelocity.linear_x;
 		goal_velocity[ANGULAR]  = stControlVelocity.angular_z;
+        motorSet = 1;
 	}
 }
 

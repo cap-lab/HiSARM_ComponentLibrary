@@ -42,6 +42,8 @@
         <extraSetting type="Extra Header" name="turtlebot3_burger.h" />
         <extraSetting type="Extra Header" name="turtlebot3_motor_driver.h" />
         <extraSetting type="Extra Source" name="turtlebot3_motor_driver.cpp" />
+        <extraSetting type="Extra Header" name="turtlebot3_motor_control.h" />
+        <extraSetting type="Extra Source" name="turtlebot3_motor_control.cpp" />
       </extraSetting_list>
       <control priority="0" controller="false">
         <control_params />

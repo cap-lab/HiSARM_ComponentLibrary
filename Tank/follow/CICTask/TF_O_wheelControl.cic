@@ -108,7 +108,7 @@ TASK_GO
         UFPort_ReadFromQueue(port_finalDirection, (unsigned char *)&direction, sizeof(int), 0 , &dataWritten);    
     }
 
-    convertDirectionToMotorVelocity(direction, vel);
+    convertDToV_Tank(direction, vel);
 
     goal_velocity[LINEAR]  = vel.linear_x;
     goal_velocity[ANGULAR]  = vel.angular_z;
