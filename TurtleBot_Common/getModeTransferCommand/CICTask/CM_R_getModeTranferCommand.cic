@@ -35,7 +35,8 @@ static mqtt::async_client cli(SERVER_ADDRESS, CLIENT_ID);
 enum MODE {
     RC,
     START,
-    FINISH
+    FINISH, 
+    TURN
 };
 static int command=RC;
 
@@ -88,6 +89,8 @@ TASK_GO
             command = START;
         }else if(!payload.compare("FINISH")){
             command = FINISH;
+        }else if(!payload.compare("TURN")){
+            command = TURN;
         }
 
         int numOfWrite;
