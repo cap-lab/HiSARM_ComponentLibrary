@@ -8,7 +8,7 @@
     <task name="O_wheelControl" type="Computational">
       <config>
         <location x="620" y="96" width="80" height="40" />
-        <parameter name="CICFile" value="O_wheelControl.cic" />
+        <parameter name="CICFile" value="BS_O_wheelControl.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="10" />
@@ -55,7 +55,7 @@
     <task name="R_getDistanceByLDS" type="Computational">
       <config>
         <location x="132" y="252" width="80" height="40" />
-        <parameter name="CICFile" value="R_getDistanceByLDS.cic" />
+        <parameter name="CICFile" value="BS_R_getDistanceByLDS.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />
@@ -108,7 +108,7 @@
     <task name="O_searchObject" type="Computational">
       <config>
         <location x="136" y="120" width="80" height="40" />
-        <parameter name="CICFile" value="O_searchObject.cic" />
+        <parameter name="CICFile" value="BS_O_searchObject.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="50" />
@@ -151,7 +151,7 @@
     <task name="R_controlAndReport" type="Computational">
       <config>
         <location x="344" y="164" width="80" height="80" />
-        <parameter name="CICFile" value="R_controlAndReport.cic" />
+        <parameter name="CICFile" value="BS_R_controlAndReport.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />

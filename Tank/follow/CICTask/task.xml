@@ -8,7 +8,7 @@
     <task name="O_wheelControl" type="Computational">
       <config>
         <location x="632" y="116" width="80" height="40" />
-        <parameter name="CICFile" value="O_wheelControl.cic" />
+        <parameter name="CICFile" value="TF_O_wheelControl.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="10" />
@@ -55,7 +55,7 @@
     <task name="R_getDistanceByLDS" type="Computational">
       <config>
         <location x="368" y="100" width="80" height="40" />
-        <parameter name="CICFile" value="R_getDistanceByLDS.cic" />
+        <parameter name="CICFile" value="TF_R_getDistanceByLDS.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />
@@ -112,7 +112,7 @@
     <task name="R_getDirectionByTracking" type="Computational">
       <config>
         <location x="116" y="116" width="80" height="40" />
-        <parameter name="CICFile" value="R_getDirectionByTracking.cic" />
+        <parameter name="CICFile" value="TF_R_getDirectionByTracking.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="100" />

@@ -8,7 +8,7 @@
     <task name="R_openRTSPServer" type="Computational">
       <config>
         <location x="288" y="124" width="80" height="40" />
-        <parameter name="CICFile" value="R_openRTSPServer.cic" />
+        <parameter name="CICFile" value="CS_R_openRTSPServer.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="1" />

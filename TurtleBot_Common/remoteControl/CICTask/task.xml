@@ -8,7 +8,7 @@
     <task name="R_getDirectionByMQTT" type="Computational">
       <config>
         <location x="176" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="R_getDirectionByMQTT.cic" />
+        <parameter name="CICFile" value="CR_R_getDirectionByMQTT.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="100" />
@@ -51,7 +51,7 @@
     <task name="O_wheelControl" type="Computational">
       <config>
         <location x="488" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="O_wheelControl.cic" />
+        <parameter name="CICFile" value="CR_O_wheelControl.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="1" />

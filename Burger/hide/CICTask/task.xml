@@ -8,7 +8,7 @@
     <task name="O_wheelControl" type="Computational">
       <config>
         <location x="472" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="O_wheelControl.cic" />
+        <parameter name="CICFile" value="BH_O_wheelControl.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="10" />
@@ -55,7 +55,7 @@
     <task name="R_getDirectionByLDS" type="Computational">
       <config>
         <location x="196" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="R_getDirectionByLDS.cic" />
+        <parameter name="CICFile" value="BH_R_getDirectionByLDS.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="100" />

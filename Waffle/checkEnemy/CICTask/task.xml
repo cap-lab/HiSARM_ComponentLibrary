@@ -8,7 +8,7 @@
     <task name="R_checkDistanceByLDS" type="Computational">
       <config>
         <location x="120" y="240" width="80" height="40" />
-        <parameter name="CICFile" value="R_checkDistanceByLDS.cic" />
+        <parameter name="CICFile" value="WC_R_checkDistanceByLDS.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />
@@ -61,7 +61,7 @@
     <task name="O_detectMotion" type="Computational">
       <config>
         <location x="120" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="O_detectMotion.cic" />
+        <parameter name="CICFile" value="WC_O_detectMotion.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />
@@ -108,7 +108,7 @@
     <task name="R_makeDecision" type="Computational">
       <config>
         <location x="488" y="180" width="80" height="60" />
-        <parameter name="CICFile" value="R_makeDecision.cic" />
+        <parameter name="CICFile" value="WC_R_makeDecision.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />

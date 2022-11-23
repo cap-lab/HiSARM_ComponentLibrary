@@ -8,7 +8,7 @@
     <task name="R_getModeTransferCommand" type="Computational">
       <config>
         <location x="188" y="112" width="80" height="40" />
-        <parameter name="CICFile" value="R_getModeTranferCommand.cic" />
+        <parameter name="CICFile" value="CM_R_getModeTranferCommand.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="100" />
