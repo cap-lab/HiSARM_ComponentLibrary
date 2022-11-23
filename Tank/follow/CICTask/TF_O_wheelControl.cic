@@ -59,7 +59,7 @@ static ControlVelocity vel;
 
 static void controlMoter();
 static void startDynamixelControlInterrupt();
-static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
+static void convertDToV_Tank(const int &direction, ControlVelocity &vel);
 
 /////////////////////////////////////
 // init code
@@ -114,36 +114,30 @@ TASK_GO
     goal_velocity[ANGULAR]  = vel.angular_z;
 }
 
-static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
+static void convertDToV_Tank(const int &direction, ControlVelocity &vel){
     switch(direction)
     {        
-        case STOP_:
-            //std:: cout << "STOP" << std::endl;           
+        case STOP_:           
             vel.linear_x = 0;
             vel.angular_z = 0;
             break;
         case FORWARD_:
-            //std:: cout << "BACKWARD" << std::endl;
-            vel.linear_x = -1 * INITIAL_LINEAR_X;
-            vel.angular_z = 0;
-            break;
-        case BACKWARD_:
-            //std:: cout << "FORWARD" << std::endl;
             vel.linear_x = INITIAL_LINEAR_X;
             vel.angular_z = 0;
             break;
+        case BACKWARD_:
+            vel.linear_x = -1 * INITIAL_LINEAR_X;
+            vel.angular_z = 0;
+            break;
         case RIGHT_:
-            //std:: cout << "LEFT" << std::endl;
             vel.linear_x = 0;
-            vel.angular_z = INITIAL_ANGULAR_Z/7;
+            vel.angular_z = INITIAL_ANGULAR_Z/7*1.43;
             break;
         case LEFT_:
-            //std:: cout << "RIGHT" << std::endl;
             vel.linear_x = 0;
-            vel.angular_z = -1 * INITIAL_ANGULAR_Z/7;
+            vel.angular_z = -1 * INITIAL_ANGULAR_Z/7*1.43;
             break;   
         default:
-            //std:: cout << "Wheel Control : direction is not correct. " << std::endl;
             break;
     }
 }
