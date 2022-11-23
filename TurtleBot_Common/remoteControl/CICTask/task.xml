@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<cic_manual name="remoteControl" xmlns="http://iris.snu.ac.kr/UEM_Schema">
+  <setting_list>
+    <setting cycle="0" unit="s" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="DataFlow" />
+  </setting_list>
+  <task_list>
+    <task name="R_getDirectionByMQTT" type="Computational">
+      <config>
+        <location x="176" y="128" width="80" height="40" />
+        <parameter name="CICFile" value="R_getDirectionByMQTT.cic" />
+        <parameter name="RunCondition" value="data-driven" />
+        <parameter name="HasInternalStates" value="Yes" />
+        <parameter name="Deadline" value="100" />
+        <parameter name="DeadlineUnit" value="ms" />
+        <parameter name="Period" value="100" />
+        <parameter name="PeriodUnit" value="ms" />
+        <parameter name="Priority" value="1" />
+        <parameter name="Language" value="C++" />
+        <parameter name="CompileFlags" value="$(shell pkg-config --cflags mqtt)" />
+        <parameter name="LinkFlags" value="$(shell pkg-config --libs mqtt)" />
+        <parameter name="HasMTM" value="No" />
+        <parameter name="HasSubGraph" value="No" />
+        <parameter name="IsDependency" value="Yes" />
+        <parameter name="LoopType" value="NONE" />
+        <parameter name="LoopCount" value="0" />
+        <parameter name="IsLoopSubTask" value="No" />
+        <parameter name="IsDesignatedTask" value="No" />
+        <parameter name="SubgraphProperty" value="Dataflow" />
+        <parameter name="Description" value="" />
+      </config>
+      <inport_list />
+      <outport_list>
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </outport_list>
+      <portMap_list />
+      <libraryPort_list />
+      <multicast_port_list />
+      <extraSetting_list />
+      <control priority="0" controller="true">
+        <control_params />
+        <slaves />
+      </control>
+      <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Linux" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
+    </task>
+    <task name="O_wheelControl" type="Computational">
+      <config>
+        <location x="488" y="128" width="80" height="40" />
+        <parameter name="CICFile" value="O_wheelControl.cic" />
+        <parameter name="RunCondition" value="data-driven" />
+        <parameter name="HasInternalStates" value="Yes" />
+        <parameter name="Deadline" value="1" />
+        <parameter name="DeadlineUnit" value="us" />
+        <parameter name="Period" value="1" />
+        <parameter name="PeriodUnit" value="us" />
+        <parameter name="Priority" value="1" />
+        <parameter name="Language" value="C++" />
+        <parameter name="CompileFlags" value="" />
+        <parameter name="LinkFlags" value="" />
+        <parameter name="HasMTM" value="No" />
+        <parameter name="HasSubGraph" value="No" />
+        <parameter name="IsDependency" value="Yes" />
+        <parameter name="LoopType" value="NONE" />
+        <parameter name="LoopCount" value="0" />
+        <parameter name="IsLoopSubTask" value="No" />
+        <parameter name="IsDesignatedTask" value="No" />
+        <parameter name="SubgraphProperty" value="Dataflow" />
+        <parameter name="Description" value="" />
+      </config>
+      <inport_list>
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+      </inport_list>
+      <outport_list />
+      <portMap_list />
+      <libraryPort_list />
+      <multicast_port_list />
+      <extraSetting_list>
+        <extraSetting type="Extra Header" name="turtlebot3_burger.h" />
+        <extraSetting type="Extra Header" name="turtlebot3_motor_driver.h" />
+        <extraSetting type="Extra Source" name="turtlebot3_motor_driver.cpp" />
+      </extraSetting_list>
+      <control priority="0" controller="true">
+        <control_params />
+        <slaves />
+      </control>
+      <faultTolerance enable="No" type="Re-execution" taskType="Automatic" path="" reexecutionNumber="0" activeReplicationNumber="0" />
+      <HardwareDependency>
+        <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
+      </HardwareDependency>
+    </task>
+  </task_list>
+  <library_list />
+  <channel_list>
+    <channel src_task="R_getDirectionByMQTT" src_port="direction" dst_task="O_wheelControl" dst_port="direction" size="4" init_size="0" sampleType="" sampleSize="1">
+      <edge_list>
+        <edge id="0" x="256" y="148" />
+        <edge id="1" x="488" y="148" />
+      </edge_list>
+    </channel>
+  </channel_list>
+  <taskLibraryConnection_list />
+  <libraryLibraryConnection_list />
+  <taskGroupList />
+  <multicast_group_list />
+</cic_manual>
+
