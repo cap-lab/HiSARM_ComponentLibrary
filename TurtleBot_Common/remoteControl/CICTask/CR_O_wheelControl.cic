@@ -19,6 +19,8 @@
 
 #define MAX_LINEAR_VELOCITY 0.22
 #define MAX_ANGULAR_VELOCITY 2.84
+#define MIN_LINEAR_VELOCITY              -MAX_LINEAR_VELOCITY  
+#define MIN_ANGULAR_VELOCITY             -MAX_ANGULAR_VELOCITY 
 #define INITIAL_LINEAR_X (MAX_LINEAR_VELOCITY/3)
 #define INITIAL_ANGULAR_Z (MAX_ANGULAR_VELOCITY)
 // ##DEFINE_SECTION::END
@@ -53,9 +55,9 @@ typedef struct _ControlVelocity{
 static int direction;
 static ControlVelocity vel;
 
-static void convertDToV_Burger(const int &direction, ControlVelocity &vel);
-static void convertDToV_Tank(const int &direction, ControlVelocity &vel);
-static void convertDToV_Waffle(const int &direction, ControlVelocity &vel);
+static void convertDToV_Burger(const int direction, ControlVelocity *vel);
+static void convertDToV_Tank(const int direction, ControlVelocity *vel);
+static void convertDToV_Waffle(const int direction, ControlVelocity *vel);
 
 /////////////////////////////////////
 // init code
@@ -73,7 +75,8 @@ TASK_INIT
     // TODO: task initialize code
     initTurtleBotMotor();
     direction = STOP_;
-    vel={0,0};
+    vel.linear_x = 0;
+    vel.angular_z = 0;
 }
 
 /////////////////////////////////////
@@ -84,51 +87,51 @@ TASK_GO
 {
     // TODO: task main code
     int dataWritten;
-    if((MQ_AVAILABLE(port_direction) > 0)){
-        UFPort_ReadFromQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataWritten);    
+    uem_result result;
+	result = UFPort_ReadFromQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataWritten);    
+	if(result == ERR_UEM_NOERROR) { 
+		std::string robot_type = THIS_ROBOT_TYPE;
+		if(!robot_type.compare("Burger")){
+			convertDToV_Burger(direction, &vel);
+		} else if(!robot_type.compare("Tank")){
+			convertDToV_Tank(direction, &vel);
+		} else if(!robot_type.compare("Waffle")){
+			convertDToV_Waffle(direction, &vel);
+		}
 
-        std::string robot_type = THIS_ROBOT_TYPE;
-        if(robot_type.compare("Burger")){
-            convertDToV_Burger(direction, vel);
-        } else if(robot_type.compare("Tank")){
-            convertDToV_Tank(direction, vel);
-        } else if(robot_type.compare("Waffle")){
-            convertDToV_Waffle(direction, vel);
-        }
-
-        goal_velocity[LINEAR]  = vel.linear_x;
-        goal_velocity[ANGULAR]  = vel.angular_z;
-        motorSet = 1;
-    }
+		goal_velocity[LINEAR]  = vel.linear_x;
+		goal_velocity[ANGULAR]  = vel.angular_z;
+		motorSet = 1;
+	}
 }
 
-static void convertDToV_Burger(const int &direction, ControlVelocity &vel){
+static void convertDToV_Burger(const int direction, ControlVelocity *vel){
     switch(direction)
     {        
         case STOP_:
             //std:: cout << "STOP" << std::endl;           
-            vel.linear_x = 0;
-            vel.angular_z = 0;
-            break;
-        case FORWARD_:
-            //std:: cout << "BACKWARD" << std::endl;
-            vel.linear_x = -1 * INITIAL_LINEAR_X;
-            vel.angular_z = 0;
+            vel->linear_x = 0;
+            vel->angular_z = 0;
             break;
         case BACKWARD_:
+            //std:: cout << "BACKWARD" << std::endl;
+            vel->linear_x = -1 * INITIAL_LINEAR_X;
+            vel->angular_z = 0;
+            break;
+        case FORWARD_:
             //std:: cout << "FORWARD" << std::endl;
-            vel.linear_x = INITIAL_LINEAR_X;
-            vel.angular_z = 0;
+            vel->linear_x = INITIAL_LINEAR_X;
+            vel->angular_z = 0;
             break;
         case RIGHT_:
             //std:: cout << "LEFT" << std::endl;
-            vel.linear_x = 0;
-            vel.angular_z = INITIAL_ANGULAR_Z/7;
+            vel->linear_x = 0;
+            vel->angular_z = INITIAL_ANGULAR_Z/7;
             break;
         case LEFT_:
             //std:: cout << "RIGHT" << std::endl;
-            vel.linear_x = 0;
-            vel.angular_z = -1 * INITIAL_ANGULAR_Z/7;
+            vel->linear_x = 0;
+            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7;
             break;   
         default:
             //std:: cout << "Wheel Control : direction is not correct. " << std::endl;
@@ -136,56 +139,56 @@ static void convertDToV_Burger(const int &direction, ControlVelocity &vel){
     }
 }
 
-static void convertDToV_Tank(const int &direction, ControlVelocity &vel){
+static void convertDToV_Tank(const int direction, ControlVelocity *vel){
     switch(direction)
     {        
         case STOP_:           
-            vel.linear_x = 0;
-            vel.angular_z = 0;
+            vel->linear_x = 0;
+            vel->angular_z = 0;
             break;
         case FORWARD_:
-            vel.linear_x = INITIAL_LINEAR_X;
-            vel.angular_z = 0;
+            vel->linear_x = INITIAL_LINEAR_X*0.85;
+            vel->angular_z = 0;
             break;
         case BACKWARD_:
-            vel.linear_x = -1 * INITIAL_LINEAR_X;
-            vel.angular_z = 0;
+            vel->linear_x = -1 * INITIAL_LINEAR_X*0.85;
+            vel->angular_z = 0;
             break;
         case RIGHT_:
-            vel.linear_x = 0;
-            vel.angular_z = INITIAL_ANGULAR_Z/7*1.43;
+            vel->linear_x = 0;
+            vel->angular_z = INITIAL_ANGULAR_Z/7*1.43;
             break;
         case LEFT_:
-            vel.linear_x = 0;
-            vel.angular_z = -1 * INITIAL_ANGULAR_Z/7*1.43;
+            vel->linear_x = 0;
+            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7*1.43;
             break;   
         default:
             break;
     }
 }
 
-static void convertDToV_Waffle(const int &direction, ControlVelocity &vel){
+static void convertDToV_Waffle(const int direction, ControlVelocity *vel){
     switch(direction)
     {        
         case STOP_:           
-            vel.linear_x = 0;
-            vel.angular_z = 0;
+            vel->linear_x = 0;
+            vel->angular_z = 0;
             break;
         case FORWARD_:
-            vel.linear_x = INITIAL_LINEAR_X;
-            vel.angular_z = 0;
+            vel->linear_x = INITIAL_LINEAR_X;
+            vel->angular_z = 0;
             break;
         case BACKWARD_:
-            vel.linear_x = -1 * INITIAL_LINEAR_X;
-            vel.angular_z = 0;
+            vel->linear_x = -1 * INITIAL_LINEAR_X;
+            vel->angular_z = 0;
             break;
         case RIGHT_:
-            vel.linear_x = 0;
-            vel.angular_z = INITIAL_ANGULAR_Z/7*1.88;
+            vel->linear_x = 0;
+            vel->angular_z = INITIAL_ANGULAR_Z/7*1.88;
             break;
         case LEFT_:
-            vel.linear_x = 0;
-            vel.angular_z = -1 * INITIAL_ANGULAR_Z/7*1.88;
+            vel->linear_x = 0;
+            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7*1.88;
             break;   
         default:
             break;
@@ -205,3 +208,4 @@ TASK_WRAPUP
 }
 
 TASK_CODE_END
+

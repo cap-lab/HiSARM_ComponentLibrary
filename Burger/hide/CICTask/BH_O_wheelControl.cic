@@ -12,14 +12,7 @@
 #include <DynamixelSDK.h>
 
 // ##DEFINE_SECTION::START
-#define LINEAR                           0
-#define ANGULAR                          1
 // ##DEFINE_SECTION::END
-
-typedef struct _ControlVelocity{
-    double linear_x;
-    double angular_z;
-} ControlVelocity;
 
 
 TASK_CODE_BEGIN
@@ -37,35 +30,30 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_velocity;
+STATIC int port_direction;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
-STATIC ControlVelocity stControlVelocity;
 
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
 
 
-static int led_pin = 13;
-static int led_pin_user[4] = { BDPIN_LED_USER_1, BDPIN_LED_USER_2, BDPIN_LED_USER_3, BDPIN_LED_USER_4 };
-static int isLow = 1;
 
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    port_velocity = PORT_INITIALIZE(TASK_ID, "velocity");
+    port_direction = PORT_INITIALIZE(TASK_ID, "direction");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-    stControlVelocity = {0,0};
-    pinMode(led_pin, OUTPUT);
+
     initTurtleBotMotor();
 }
 
@@ -78,26 +66,15 @@ TASK_GO
 {
     // TODO: task main code
     int dataWritten;
+    int direction;
+    uem_result result;
 
-   if((MQ_AVAILABLE(port_velocity) > 0)){
-        UFPort_ReadFromQueue(port_velocity, (unsigned char *)&stControlVelocity, sizeof(ControlVelocity), 0 , &dataWritten);    
-
-		int i = 0;
-		if(isLow){
-			for( i=0; i<4; i++ ) {
-				digitalWrite(led_pin_user[i], HIGH);
-			}
-			isLow = 0;
-        }else{
-			for( i=0; i<4; i++ ) {
-				digitalWrite(led_pin_user[i], LOW);
-			}
-			isLow = 1;
-        }
-		goal_velocity[LINEAR]  = stControlVelocity.linear_x;
-		goal_velocity[ANGULAR]  = stControlVelocity.angular_z;
+    result = UFPort_ReadFromQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataWritten);    
+    if(result == ERR_UEM_NOERROR) { 
+        goal_velocity[LINEAR]  = 0;
+        goal_velocity[ANGULAR]  = 0;
         motorSet = 1;
-	}
+    }
 }
 
 

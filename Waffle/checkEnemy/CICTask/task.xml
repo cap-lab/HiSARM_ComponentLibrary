@@ -105,7 +105,7 @@
       <config>
         <location x="488" y="180" width="80" height="60" />
         <parameter name="CICFile" value="WC_R_makeDecision.cic" />
-        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />
         <parameter name="DeadlineUnit" value="ms" />
@@ -154,13 +154,13 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="R_checkDistanceByLDS" src_port="frontDistance" dst_task="R_makeDecision" dst_port="frontDistance" size="4" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="R_checkDistanceByLDS" src_port="frontDistance" dst_task="R_makeDecision" dst_port="frontDistance" size="1" init_size="0" sampleType="" sampleSize="4">
       <edge_list>
         <edge id="0" x="200" y="260" />
         <edge id="1" x="488" y="220" />
       </edge_list>
     </channel>
-    <channel src_task="O_detectMotion" src_port="motion" dst_task="R_makeDecision" dst_port="motion" size="4" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="O_detectMotion" src_port="motion" dst_task="R_makeDecision" dst_port="motion" size="1" init_size="0" sampleType="" sampleSize="4">
       <edge_list>
         <edge id="0" x="200" y="148" />
         <edge id="1" x="488" y="200" />

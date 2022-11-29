@@ -10,8 +10,6 @@
 /////////////////////////////////////
 #include <iostream>
 #include <string>
-#include <thread>
-#include <chrono>
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
@@ -29,6 +27,7 @@ TASK_CODE_BEGIN
 
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_direction;
+STATIC int port_found;
 // ##DEFINE_PORT_SECTION::END
 
 enum DIRECTION {
@@ -43,7 +42,7 @@ static int direction;
 
 static cv::VideoCapture cap;
 static cv::Mat frame;
-cv::Mat detectObjectByColor(const cv::Mat &frame);
+static cv::Mat detectObjectByColor(const cv::Mat &frame);
 
 /////////////////////////////////////
 // init code
@@ -53,21 +52,14 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
+    port_found = PORT_INITIALIZE(TASK_ID, "found");
 // ##INIT_PORT_SECTION::END
-
-    std::string cmd = "v4l2rtspserver -W 480 -H 480 -F 15 -P 8554 /dev/video0 &";
-    //run process with shell
-    system(cmd.c_str());
-
-    std::this_thread::sleep_for(std::chrono::seconds(2));
     
     // TODO: task initialize code
     cap.open("rtsp://127.0.0.1:8554/unicast");
     if(!cap.isOpened()) {
         std::cout<<"Failed to open camera."<<std::endl;
     }
-     
-    cv::namedWindow("Tracking", cv::WINDOW_AUTOSIZE);
 
     direction=STOP_;
 }
@@ -79,6 +71,7 @@ TASK_INIT
 
 TASK_GO
 {
+    int found = 0;
     // TODO: task main code
     if (cap.read(frame)) {
         //image_processing
@@ -100,7 +93,7 @@ TASK_GO
             //for debugging
             if (center_x >=0 && center_y >=0){
                 cv::circle(frame, cv::Point(center_x, center_y), 10, cv::Scalar(255,255,255),2);
-                std::cout << "center_x=" << center_x << "  center_y=" << center_y << std::endl;
+                std::cout << "center_x=" << center_x  << std::endl;
             }
 
             int width = frame.size().width;
@@ -111,38 +104,40 @@ TASK_GO
             }else{
                 direction = FORWARD_;
             }
+            found = 1;
             
-            cv::imshow("Tracking", frame);
             cv::waitKey(5);
         }        
     }else{
+        direction = LEFT_;
         std::cout<<"Capture read error"<<std::endl;
     }
         
     int numOfWrite;
-    UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
+    UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
+    UFPort_WriteToQueue(port_found, (unsigned char *)&found, sizeof(int), 0, &numOfWrite);
 }
 
 
-cv::Mat detectObjectByColor(const cv::Mat &frame){
+static cv::Mat detectObjectByColor(const cv::Mat &frame){
     cv::Mat imageHSV;      
-     //convert the capture fram from BGR TO HSV
-     cv::cvtColor(frame, imageHSV, cv::COLOR_BGR2HSV);     
- 
-     //threshold the image
-     cv::Mat imageThresholded;
-     //cv::inRange(imageHSV, cv::Scalar(lowValueHue,lowValueSat,lowValueVal), cv::Scalar(highValueHue,hig    hValueSat,highValueVal), imageThresholded);
-     cv::inRange(imageHSV, cv::Scalar(0, 0, 0), cv::Scalar(100, 255, 33.16), imageThresholded);
-     
-     //morphologoical opening(remove small objects from the foreground)
-     cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(    5,5)));
-     cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size    (5,5)));
-     
-     //morphological closing fill in small holes of the foreground)
-     cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size    (5,5)));
-     cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(    5,5)));
-     
-     return imageThresholded;
+	//convert the capture fram from BGR TO HSV
+	cv::cvtColor(frame, imageHSV, cv::COLOR_BGR2HSV);     
+
+	//threshold the image
+	cv::Mat imageThresholded;
+	//cv::inRange(imageHSV, cv::Scalar(lowValueHue,lowValueSat,lowValueVal), cv::Scalar(highValueHue,highValueSat,highValueVal), imageThresholded);
+	cv::inRange(imageHSV, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 40.16), imageThresholded);
+
+	//morphologoical opening(remove small objects from the foreground)
+	cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+	cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+
+	//morphological closing fill in small holes of the foreground)
+	cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+	cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+
+	return imageThresholded;
  }
  
 
@@ -154,10 +149,6 @@ TASK_WRAPUP
 {
     // TODO: task wrapup code
     cap.release();
-    cv::destroyAllWindows();
-    
-	std::string cmd = "pkill v4l2rtspserver";
-    system(cmd.c_str());
 }
 
 

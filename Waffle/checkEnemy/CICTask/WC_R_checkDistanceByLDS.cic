@@ -91,7 +91,7 @@ TASK_GO
     }
 
     int numOfWrite;
-    UFPort_WriteToBuffer(port_frontDistance, (unsigned char *)&front_distance, sizeof(int), 0, &numOfWrite);
+    UFPort_WriteToQueue(port_frontDistance, (unsigned char *)&front_distance, sizeof(int), 0, &numOfWrite);
 }
 
 

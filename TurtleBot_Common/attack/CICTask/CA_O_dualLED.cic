@@ -53,6 +53,8 @@ TASK_INIT
     //turnOnRightLED(LED_OLLO_PORT);
 }
 
+static int count = 0;
+static int increase = 1;
 
 /////////////////////////////////////
 // go code
@@ -63,17 +65,25 @@ TASK_GO
     // TODO: task main code
     int dataLength;
     int led = 0;
-	if((MQ_AVAILABLE(port_led) > 0)){
-        UFPort_ReadFromQueue(port_led, (unsigned char *)&led, sizeof(int), 0, &dataLength);
-        
-        for (int i=0; i<4; i++){
+	uem_result result;
+    result = UFPort_ReadFromQueue(port_led, (unsigned char *)&led, sizeof(int), 0, &dataLength);
+    if(result == ERR_UEM_NOERROR) {
+        if(count <= 0) {
             digitalWrite(OLLO_P4_SIG1, HIGH);  // set to as HIGH LED is turn-off
             digitalWrite(OLLO_P4_SIG2, HIGH);  // set to as HIGH LED is turn-off
-            delay(500);                   // Wait for 0.1 second
-            
+            increase = 1;
+        }
+        else if(count >= 10) {
             digitalWrite(OLLO_P4_SIG2, LOW);   // set to as LOW LED is turn-on
             digitalWrite(OLLO_P4_SIG1, LOW);   // set to as LOW LED is turn-on
-            delay(500);
+            increase = 0;
+        }
+
+        if(increase == 1) {
+            count++;
+        }
+        else {
+            count--;
         }
 	} 
 }

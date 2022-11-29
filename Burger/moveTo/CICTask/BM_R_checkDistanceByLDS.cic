@@ -32,15 +32,12 @@ STATIC int port_direction;
 STATIC int port_arrived;
 // ##DEFINE_PORT_SECTION::END
 
-static LiPkg *pkg;
-static CmdInterfaceLinux cmd_port(8); //lds_version = 8
-
 //for random
 static std::random_device rd;
 static std::mt19937 gen(rd());
 static std::uniform_int_distribution<int> dis(1000, 3000);
 
-std::vector<int> getAroundDistance(const FrameData &data)
+static std::vector<int> getAroundDistance(const FrameData &data);
 static int direction;
 static int arrived;
 
@@ -72,35 +69,16 @@ TASK_INIT
     // TODO: task initialize code
 
     //////////////////////// init LDS ///////////////////////////
-    pkg = new LD08_LiPkg;    
-    std::vector<std::pair<std::string, std::string>> device_list;
-    std::string port_name;
-    cmd_port.GetCmdDevices(device_list);
-    for (auto n : device_list){
-        // std::cout << n.first << "    " << n.second << std::endl;
-        if (strstr(n.second.c_str(), "CP2102")){
-        port_name = n.first;
-        }
-    }
-
-    if (port_name.empty() == false){
-        // std::cout << "FOUND LiDAR" << std::endl;
-        cmd_port.SetReadCallback([&pkg](const char *byte, size_t len){
-            if(pkg->Parse((uint8_t*)byte, len)){
-                pkg->AssemblePacket();  
-            } 
-        });
-    }
-
-    if (cmd_port.Open(port_name)){
-        // std::cout << "LiDAR started successfully " << std::endl;
-    }
-    //////////////////////// init LDS ///////////////////////////
-    
+    init_lds();
     direction=STOP_;
     arrived=0;
 }
 
+
+static int front_d = 0;
+static int right_d = 0;
+static int left_d = 0;
+static int lds_count = 0;
 
 /////////////////////////////////////
 // go code
@@ -112,66 +90,109 @@ TASK_GO
 	int area=R1;
     UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0, &dataLength);
     // TODO: task main code
-    if (pkg->IsFrameReady()){
-        FrameData data = pkg->GetFrameData();
-        std::vector<int> around_distance=getAroundDistance(data);
+    
+    if (arrived == 0){
+        if (isFrameReady()){
+            FrameData data = getFrameData();
+            std::vector<int> around_distance=getAroundDistance(data);
+            if (lds_count > 3){
+                front_d = around_distance[0];
+                right_d = around_distance[1];
+                left_d = around_distance[3];
 
-		if(arrived == 1 || around_distance[0]<250){
-			direction = STOP_;
-		}else if(area==R1 && around_distance[1]>500 && arrived==0){
-			arrived=1;
-			direction=LEFT_;
-			UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1900));
-			direction = FORWARD_;
-			UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-			direction = LEFT_;
-			UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-			std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
-			direction = STOP_;	
-		}else if (area==R2 && around_distance[3]>500 && arrived==0){
-			arrived=1;
-			direction=RIGHT_;
-			UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1900));
-			direction = FORWARD_;
-			UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-			direction = RIGHT_;
-			UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
-			std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
-			direction = STOP_;
-		}else{
-			direction = FORWARD_;
-		}
+                if(front_d<350){
+                    direction = STOP_;
+                }else if(left_d>1000 && right_d>1000 && arrived==0){
+                    if(area==R2){
+                        std::cout << " turn(R2) " << std::endl;
+                        arrived=1;
+
+                        direction=LEFT_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+                        direction = FORWARD_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::seconds(4));
+
+                        direction = LEFT_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
+
+                        direction = FORWARD_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::seconds(4));
+                        direction = STOP_;	
+                    }else{
+                        std::cout << " front_d : " << front_d  << std::flush;
+                        std::cout << " right_d : " << right_d  << std::flush;
+                        std::cout << " left_d : " << left_d  << std::flush;
+                        std::cout << " direction : " << direction  << std::endl;
+                        std::cout << " turn(R1) " << std::endl;
+                        arrived=1;
+
+                        direction=RIGHT_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+                        direction = FORWARD_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::seconds(4));
+
+                        direction = RIGHT_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
+                        
+                        direction = FORWARD_;
+                        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+                        std::this_thread::sleep_for(std::chrono::seconds(4));
+                        direction = STOP_;	
+                    }
+                }else{
+                    direction = FORWARD_;
+                }
+            }
+            if (lds_count <5){
+                lds_count++;
+            }
+
+            std::cout << THIS_ROBOT_NAME << std::flush;
+            std::cout << " front_d : " << front_d  << std::flush;
+            std::cout << " right_d : " << right_d  << std::flush;
+            std::cout << " left_d : " << left_d  << std::flush;
+            std::cout << " direction : " << direction  << std::endl;
+        }
+
+        UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+        UFPort_WriteToBuffer(port_arrived, (unsigned char *)&arrived, sizeof(int), 0, &dataLength);
+    }else{
+        if (isFrameReady()){
+            FrameData data = getFrameData();
+        }
+
     }
-
-
-    UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
-    UFPort_WriteToBuffer(port_arrived, (unsigned char *)&arrived, sizeof(int), 0, &dataLength);
+    
 }
 
 
-std::vector<int> getAroundDistance(const FrameData &data){
+static std::vector<int> getAroundDistance(const FrameData &data){
     float angle_increment = (data.angle_max - data.angle_min) / data.len;
     float angle_point = data.angle_min; //1st point's angle
 
     std::vector<int> around_distance={8000, 8000, 8000, 8000}; //max_distance = 8m, distance = {front, left, back, right}
     for (int i = 0; i < (int)data.len; i++){
         // check one of 10 points because there are too many points.
-        if (i%5==0){ 
-            angle_point += (angle_increment*5);
-            if(data.intensities[i]>100){ //if data is reliable
-                if(angle_point < 30 || 330 < angle_point){ //front
-                    around_distance[0] = (around_distance[0] < data.distance[i]) ? around_distance[0] : data.distance[i];
-                }else if( 80 < angle_point && angle_point < 95 ){ //right
-                    around_distance[1] = (around_distance[1] < data.distance[i]) ? around_distance[1] : data.distance[i];
-                //}else if( 135 < angle_point && angle_point < 225 ){ //back
-                //    around_distance[2] = (around_distance[2] < data.distance[i]) ? around_distance[2] : data.distance[i];
-                }else if( 265 < angle_point && angle_point < 280 ){ //left
-                    around_distance[3] = (around_distance[3] < data.distance[i]) ? around_distance[3] : data.distance[i];
-                }
+
+        angle_point += angle_increment;
+        if(data.intensities[i]>100){ //if data is reliable
+            if(angle_point < 30 || 330 < angle_point){ //front
+                around_distance[0] = (around_distance[0] < data.distance[i]) ? around_distance[0] : data.distance[i];
+            }else if( 80 < angle_point && angle_point < 100 ){ //right
+                around_distance[1] = (around_distance[1] < data.distance[i]) ? around_distance[1] : data.distance[i];
+            //}else if( 135 < angle_point && angle_point < 225 ){ //back
+            //    around_distance[2] = (around_distance[2] < data.distance[i]) ? around_distance[2] : data.distance[i];
+            }else if( 260 < angle_point && angle_point < 280 ){ //left
+                around_distance[3] = (around_distance[3] < data.distance[i]) ? around_distance[3] : data.distance[i];
             }
         }
     }

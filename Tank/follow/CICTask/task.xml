@@ -42,6 +42,8 @@
         <extraSetting type="Extra Header" name="turtlebot3_burger.h" />
         <extraSetting type="Extra Header" name="turtlebot3_motor_driver.h" />
         <extraSetting type="Extra Source" name="turtlebot3_motor_driver.cpp" />
+        <extraSetting type="Extra Header" name="turtlebot3_motor_control.h" />
+        <extraSetting type="Extra Source" name="turtlebot3_motor_control.cpp" />
       </extraSetting_list>
       <control priority="0" controller="false">
         <control_params />
@@ -56,7 +58,7 @@
       <config>
         <location x="368" y="100" width="80" height="40" />
         <parameter name="CICFile" value="TF_R_getDistanceByLDS.cic" />
-        <parameter name="RunCondition" value="time-driven" />
+        <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />
         <parameter name="DeadlineUnit" value="ms" />
@@ -77,7 +79,10 @@
         <parameter name="Description" value="" />
       </config>
       <inport_list>
-        <port id="0" export="false" name="direction" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+        <port id="1" export="false" name="found" type="fifo" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </inport_list>
@@ -113,11 +118,11 @@
       <config>
         <location x="116" y="116" width="80" height="40" />
         <parameter name="CICFile" value="TF_R_getDirectionByTracking.cic" />
-        <parameter name="RunCondition" value="data-driven" />
+        <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
-        <parameter name="Deadline" value="100" />
+        <parameter name="Deadline" value="50" />
         <parameter name="DeadlineUnit" value="ms" />
-        <parameter name="Period" value="100" />
+        <parameter name="Period" value="50" />
         <parameter name="PeriodUnit" value="ms" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
@@ -135,7 +140,10 @@
       </config>
       <inport_list />
       <outport_list>
-        <port id="0" export="false" name="direction" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+        <port id="1" export="false" name="found" type="fifo" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
@@ -155,13 +163,19 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="R_getDirectionByTracking" src_port="direction" dst_task="R_getDistanceByLDS" dst_port="direction" size="4" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="R_getDirectionByTracking" src_port="direction" dst_task="R_getDistanceByLDS" dst_port="direction" size="1" init_size="0" sampleType="" sampleSize="4">
       <edge_list>
         <edge id="0" x="196" y="136" />
         <edge id="1" x="368" y="120" />
       </edge_list>
     </channel>
-    <channel src_task="R_getDistanceByLDS" src_port="finalDirection" dst_task="O_wheelControl" dst_port="finalDirection" size="4" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="R_getDirectionByTracking" src_port="found" dst_task="R_getDistanceByLDS" dst_port="found" size="1" init_size="0" sampleType="" sampleSize="4">
+      <edge_list>
+        <edge id="0" x="196" y="136" />
+        <edge id="1" x="368" y="120" />
+      </edge_list>
+    </channel>
+    <channel src_task="R_getDistanceByLDS" src_port="finalDirection" dst_task="O_wheelControl" dst_port="finalDirection" size="1" init_size="0" sampleType="" sampleSize="4">
       <edge_list>
         <edge id="0" x="448" y="120" />
         <edge id="1" x="632" y="136" />

@@ -62,7 +62,7 @@ TASK_GO
     // TODO: task main code
     int dataLength;
     UFPort_ReadFromBuffer(port_motion, (unsigned char *)&motion, sizeof(int), 0 , &dataLength);    
-    UFPort_ReadFromBuffer(port_frontDistance, (unsigned char *)&frontDistance, sizeof(int), 0 , &dataLength);    
+    UFPort_ReadFromQueue(port_frontDistance, (unsigned char *)&frontDistance, sizeof(int), 0 , &dataLength);    
 
     if (motion==0){
         motionCount++;

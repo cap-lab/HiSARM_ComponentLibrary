@@ -30,7 +30,6 @@ STATIC int port_color;
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
 static OLLO colorSensor;          // OLLO.cpp (.arduino15/~~~~)
-static int color; 
 
 /////////////////////////////////////
 // init code
@@ -47,7 +46,6 @@ TASK_INIT
 
     // TODO: task initialize code
    colorSensor.begin(colorOLLOPort, COLOR_SENSOR);
-   color = 100; //random value
 }
 
 
@@ -58,6 +56,7 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
+    int color = 0;
     color = colorSensor.read(colorOLLOPort, COLOR_SENSOR);
     int writtenLength;
     UFPort_WriteToBuffer(port_color, (unsigned char*)&color, sizeof(int), 0, &writtenLength);
@@ -76,3 +75,4 @@ TASK_WRAPUP
 }
 
 TASK_CODE_END
+

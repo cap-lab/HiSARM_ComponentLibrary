@@ -25,6 +25,7 @@ TASK_CODE_BEGIN
 
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_direction;
+STATIC int port_found;
 STATIC int port_finalDirection;
 // ##DEFINE_PORT_SECTION::END
 
@@ -52,6 +53,7 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
+    port_found = PORT_INITIALIZE(TASK_ID, "found");
     port_finalDirection = PORT_INITIALIZE(TASK_ID, "finalDirection");
 // ##INIT_PORT_SECTION::END
     
@@ -95,19 +97,27 @@ TASK_INIT
 TASK_GO
 {
     int dataLength;
-    UFPort_ReadFromBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+    int found = 0;
+    UFPort_ReadFromQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+    UFPort_ReadFromQueue(port_found, (unsigned char *)&found, sizeof(int), 0, &dataLength);
     
     // TODO: task main code
     if (pkg->IsFrameReady()){
         FrameData data = pkg->GetFrameData();
         front_distance=getFrontDistance(data);
     }
-    
-    if (front_distance < 300){
+
+    if (found == 1 && front_distance < 350){
+        direction = STOP_;
+    } else if (front_distance < 250) {
         direction = STOP_;
     }
 
-    UFPort_WriteToQueue(port_finalDirection, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
+    std::cout << "found : " << found << std::flush;
+    std::cout << " distance : " << front_distance << std::flush;
+    std::cout << "  direction : " << direction << std::endl;
+
+    UFPort_WriteToBuffer(port_finalDirection, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
 }
 
 
@@ -122,7 +132,7 @@ static int getFrontDistance(const FrameData &data){
         if (i%checkPointInterval==0){ 
             angle_point += (angle_increment*checkPointInterval);
             if(data.intensities[i]>100){ //if data is reliable
-                if(angle_point < 45 || 315 < angle_point){ //front
+                if(angle_point < 30 || 330 < angle_point){ //front
                     front_distance = (front_distance < data.distance[i]) ? front_distance : data.distance[i];
                 }
             }
@@ -140,7 +150,9 @@ static int getFrontDistance(const FrameData &data){
 TASK_WRAPUP
 {
     // TODO: task wrapup code
-
+    int dataLength;
+    direction = STOP_;
+    UFPort_WriteToBuffer(port_finalDirection, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
 }
 
 TASK_CODE_END
