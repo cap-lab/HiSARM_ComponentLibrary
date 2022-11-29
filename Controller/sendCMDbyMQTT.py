@@ -13,7 +13,7 @@ message = {'8':['direction', 'FORWARD'],
            's':['command', 'START'],
            'f':['command', 'FINISH'],
            'r':['command', 'RC'],
-           't':['command', 'TURN'],
+           'h':['command', 'TURN'],
            }
 
 ##for MQTT

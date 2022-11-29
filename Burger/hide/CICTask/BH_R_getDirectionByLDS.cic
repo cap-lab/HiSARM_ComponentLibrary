@@ -17,6 +17,8 @@
 #define ANGLE_TO_RADIAN(angle) ((angle)*3141.59 / 180000)
 #define MAX_LINEAR_VELOCITY 0.22
 #define MAX_ANGULAR_VELOCITY 2.84
+#define MIN_LINEAR_VELOCITY              -MAX_LINEAR_VELOCITY  
+#define MIN_ANGULAR_VELOCITY             -MAX_ANGULAR_VELOCITY 
 #define INITIAL_LINEAR_X (MAX_LINEAR_VELOCITY/3)
 #define INITIAL_ANGULAR_Z (MAX_ANGULAR_VELOCITY)
 // ##DEFINE_SECTION::END
@@ -29,7 +31,7 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_velocity;
+STATIC int port_direction;
 // ##DEFINE_PORT_SECTION::END
 
 enum DIRECTION {
@@ -49,9 +51,9 @@ static LiPkg *pkg;
 static CmdInterfaceLinux cmd_port(8); //lds_version = 8
 static ControlVelocity vel;
 
-std::vector<int> getAroundDistance(const FrameData &data);
-int getDirection(const std::vector<int> &around_distance);
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
+static std::vector<int> getAroundDistance(const FrameData &data);
+static int getDirection(const std::vector<int> &around_distance);
+static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 /////////////////////////////////////
 // init code
@@ -60,12 +62,13 @@ void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel)
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    port_velocity = PORT_INITIALIZE(TASK_ID, "velocity");
+    port_direction = PORT_INITIALIZE(TASK_ID, "direction");
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
 
     //////////////////////// init LDS ///////////////////////////
+    /*
     pkg = new LD08_LiPkg;    
     std::vector<std::pair<std::string, std::string>> device_list;
     std::string port_name;
@@ -90,8 +93,9 @@ TASK_INIT
         // std::cout << "LiDAR started successfully " << std::endl;
     }
     //////////////////////// init LDS ///////////////////////////
+    */
 
-    vel = {0, 0};
+    //vel = {0, 0};
 }
 
 
@@ -102,50 +106,24 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
+    /*
     if (pkg->IsFrameReady()){
         FrameData data = pkg->GetFrameData();
         std::vector<int> around_distance=getAroundDistance(data);
         int direction = getDirection(around_distance);
-        
-        /*
-        std::cout << "front : " << around_distance[0] << std::flush;
-        std::cout << "\tright : " << around_distance[1] << std::flush;
-        std::cout << "\tback : " << around_distance[2] << std::flush;
-        std::cout << "\tleft : " << around_distance[3] << std::endl;
-        switch (direction)
-        {
-        case FORWARD_:
-            std::cout << "FORWARD_" << std::endl;
-            break;
-        case RIGHT_:
-            std::cout << "RIGHT_" << std::endl;
-            break;
-        case BACKWARD_:
-            std::cout << "BACKWARD_" << std::endl;
-            break;
-        case LEFT_:
-            std::cout << "LEFT_" << std::endl;
-            break;
-        case STOP_:
-            std::cout << "STOP_" << std::endl;
-            break;
-        default:
-            break;
-        }
-        
-        std::cout << std::endl;
-        std::cout << std::endl;
-        */
 
         convertDirectionToMotorVelocity(direction, vel);
     }
+    */
+    int direction = STOP_;
+    //convertDirectionToMotorVelocity(direction, vel);
 
     int numOfWrite;
-    UFPort_WriteToQueue(port_velocity, (unsigned char *)&vel, sizeof(ControlVelocity), 0, &numOfWrite);
+    UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &numOfWrite);
 }
 
 
-std::vector<int> getAroundDistance(const FrameData &data){
+static std::vector<int> getAroundDistance(const FrameData &data){
     float angle_increment = (data.angle_max - data.angle_min) / data.len;
     float angle_point = data.angle_min; //1st point's angle
 
@@ -172,7 +150,7 @@ std::vector<int> getAroundDistance(const FrameData &data){
 }
 
 
-int getDirection(const std::vector<int> &around_distance){
+static int getDirection(const std::vector<int> &around_distance){
     int nearest_direction =  std::min_element(around_distance.begin(), around_distance.end()) - around_distance.begin();
     if(around_distance[nearest_direction] <200){
         return STOP_;
@@ -182,7 +160,7 @@ int getDirection(const std::vector<int> &around_distance){
 }
 
 
-void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
+static void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){
     switch(direction)
     {        
         case STOP_:
@@ -228,3 +206,11 @@ TASK_WRAPUP
 }
 
 TASK_CODE_END
+
+#undef ANGLE_TO_RADIAN
+#undef MAX_LINEAR_VELOCITY
+#undef MAX_ANGULAR_VELOCITY
+#undef MIN_LINEAR_VELOCITY
+#undef MIN_ANGULAR_VELOCITY
+#undef INITIAL_LINEAR_X
+#undef INITIAL_ANGULAR_Z

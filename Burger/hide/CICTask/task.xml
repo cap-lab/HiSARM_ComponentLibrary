@@ -9,7 +9,7 @@
       <config>
         <location x="472" y="128" width="80" height="40" />
         <parameter name="CICFile" value="BH_O_wheelControl.cic" />
-        <parameter name="RunCondition" value="data-driven" />
+        <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="10" />
         <parameter name="DeadlineUnit" value="ms" />
@@ -30,7 +30,7 @@
         <parameter name="Description" value="" />
       </config>
       <inport_list>
-        <port id="0" export="false" name="velocity" type="fifo" sample_size="16" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="direction" type="fifo" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </inport_list>
@@ -60,9 +60,9 @@
         <parameter name="CICFile" value="BH_R_getDirectionByLDS.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
-        <parameter name="Deadline" value="100" />
+        <parameter name="Deadline" value="200" />
         <parameter name="DeadlineUnit" value="ms" />
-        <parameter name="Period" value="100" />
+        <parameter name="Period" value="200" />
         <parameter name="PeriodUnit" value="ms" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
@@ -80,7 +80,7 @@
       </config>
       <inport_list />
       <outport_list>
-        <port id="0" export="false" name="velocity" type="fifo" sample_size="16" sample_rate="Fixed" description="">
+        <port id="0" export="false" name="direction" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
@@ -110,7 +110,7 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="R_getDirectionByLDS" src_port="velocity" dst_task="O_wheelControl" dst_port="velocity" size="16" init_size="0" sampleType="" sampleSize="1">
+    <channel src_task="R_getDirectionByLDS" src_port="direction" dst_task="O_wheelControl" dst_port="direction" size="1" init_size="0" sampleType="" sampleSize="4">
       <edge_list>
         <edge id="0" x="276" y="148" />
         <edge id="1" x="472" y="148" />

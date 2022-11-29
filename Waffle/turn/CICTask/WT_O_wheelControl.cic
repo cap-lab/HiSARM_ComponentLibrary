@@ -12,10 +12,8 @@
 #include <DynamixelSDK.h>
 
 // ##DEFINE_SECTION::START
-#define WHEEL_NUM                        2
 #define LINEAR                           0
 #define ANGULAR                          1
-#define CONTROL_PERIOD                   8000
 
 #define MAX_LINEAR_VELOCITY 0.22
 #define MAX_ANGULAR_VELOCITY 2.84
@@ -37,10 +35,6 @@ STATIC int port_direction;
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
-HardwareTimer Timer(TIMER_CH1);
-Turtlebot3MotorDriver motor_driver;
-static float goal_velocity[WHEEL_NUM] = {0.0, 0.0};
-
 enum DIRECTION {
     FORWARD_,
     LEFT_,
@@ -57,8 +51,6 @@ typedef struct _ControlVelocity{
 static int direction;
 static ControlVelocity vel;
 
-void controlMoter();
-void startDynamixelControlInterrupt();
 void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel);
 
 /////////////////////////////////////
@@ -75,26 +67,11 @@ TASK_INIT
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-    motor_driver.init(NAME);
-    startDynamixelControlInterrupt();
+    initTurtleBotMotor();
 
     direction = STOP_;
     vel={0,0};
 }
-
-void controlMoter(){
-    motor_driver.controlMotor(WHEEL_RADIUS, WHEEL_SEPARATION, goal_velocity);
-}
-
-
-void startDynamixelControlInterrupt(){
-    Timer.pause();
-    Timer.setPeriod(CONTROL_PERIOD);           // in microseconds
-    Timer.attachInterrupt(controlMoter);
-    Timer.refresh();
-    Timer.resume();
-}
-
 
 /////////////////////////////////////
 // go code
@@ -106,12 +83,14 @@ TASK_GO
     int dataWritten;
     if((MQ_AVAILABLE(port_direction) > 0)){
         UFPort_ReadFromQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataWritten);    
+    
+        convertDirectionToMotorVelocity(direction, vel);
+
+        goal_velocity[LINEAR]  = vel.linear_x;
+        goal_velocity[ANGULAR]  = vel.angular_z;
+        
+        motorSet = 1;
     }
-
-    convertDirectionToMotorVelocity(direction, vel);
-
-    goal_velocity[LINEAR]  = vel.linear_x;
-    goal_velocity[ANGULAR]  = vel.angular_z;
 }
 
 void convertDirectionToMotorVelocity(const int &direction, ControlVelocity &vel){

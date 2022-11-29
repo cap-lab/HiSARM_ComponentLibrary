@@ -80,8 +80,9 @@ TASK_GO
     mqtt::const_message_ptr messagePointer;
 
     if (cli.try_consume_message(&messagePointer))
-    {
+    { 
         std::string payload = messagePointer -> get_payload_str();
+        std::cout << payload << std::endl;
         //std::string payload = msg->to_string();
         if (!payload.compare("RC")){
             command = RC;
@@ -93,6 +94,8 @@ TASK_GO
             command = TURN;
         }
 
+        std::cout << "MQTT(command) : " << command <<std::endl;
+        
         int numOfWrite;
         UFPort_WriteToBuffer(port_command, (unsigned char *)&command, sizeof(int), 0, &numOfWrite);
     }
