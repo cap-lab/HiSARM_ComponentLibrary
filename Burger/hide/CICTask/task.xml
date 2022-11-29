@@ -54,10 +54,10 @@
         <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
       </HardwareDependency>
     </task>
-    <task name="R_getDirectionByLDS" type="Computational">
+    <task name="R_stop" type="Computational">
       <config>
         <location x="196" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="BH_R_getDirectionByLDS.cic" />
+        <parameter name="CICFile" value="BH_R_stop.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="200" />
@@ -110,7 +110,7 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="R_getDirectionByLDS" src_port="direction" dst_task="O_wheelControl" dst_port="direction" size="1" init_size="0" sampleType="" sampleSize="4">
+    <channel src_task="R_stop" src_port="direction" dst_task="O_wheelControl" dst_port="direction" size="1" init_size="0" sampleType="" sampleSize="4">
       <edge_list>
         <edge id="0" x="276" y="148" />
         <edge id="1" x="472" y="148" />

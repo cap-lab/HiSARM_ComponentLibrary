@@ -41,6 +41,8 @@ STATIC int port_direction;
 // init code
 /////////////////////////////////////
 
+#define LINEAR                           0
+#define ANGULAR                          1
 
 
 TASK_INIT
