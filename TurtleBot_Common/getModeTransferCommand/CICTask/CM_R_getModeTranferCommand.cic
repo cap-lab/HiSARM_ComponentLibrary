@@ -90,8 +90,8 @@ TASK_GO
             command = START;
         }else if(!payload.compare("FINISH")){
             command = FINISH;
-        }else if(!payload.compare("TURN")){
-            command = TURN;
+        }else if(!payload.compare("HIDE")){
+            command = HIDE;
         }
 
         std::cout << "MQTT(command) : " << command <<std::endl;
