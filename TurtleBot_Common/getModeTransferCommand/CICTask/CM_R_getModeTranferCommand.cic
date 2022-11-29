@@ -36,7 +36,7 @@ enum MODE {
     RC,
     START,
     FINISH, 
-    TURN
+    HIDE
 };
 static int command=RC;
 
