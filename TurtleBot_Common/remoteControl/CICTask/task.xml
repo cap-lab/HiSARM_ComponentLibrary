@@ -56,7 +56,7 @@
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="10" />
         <parameter name="DeadlineUnit" value="ms" />
-        <parameter name="Period" value="10" />
+        <parameter name="Period" value="100" />
         <parameter name="PeriodUnit" value="ms" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
