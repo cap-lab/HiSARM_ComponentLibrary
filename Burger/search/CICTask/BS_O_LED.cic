@@ -1,0 +1,84 @@
+/************************************
+ *
+ * File : LED.cic
+ * Date : Nov 9, 2022 1:03 PM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <Arduino.h>
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+#define OLLO_SLEEP  46
+#define OLLO_P4_SIG1  73
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_led;
+// ##DEFINE_PORT_SECTION::END
+
+// ##DEFINE_MULTICAST_PORT_SECTION::START
+// ##DEFINE_MULTICAST_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_led = PORT_INITIALIZE(TASK_ID, "led");
+// ##INIT_PORT_SECTION::END
+
+// ##INIT_MULTICAST_PORT_SECTION::START
+// ##INIT_MULTICAST_PORT_SECTION::END
+
+    // TODO: task initialize code
+    pinMode(OLLO_P4_SIG1, OUTPUT);
+     
+    //turnOnLeftLED(LED_OLLO_PORT);
+    //turnOnRightLED(LED_OLLO_PORT);
+}
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int dataLength;
+    int led = 0;
+	uem_result result;
+    result = UFPort_ReadFromQueue(port_led, (unsigned char *)&led, sizeof(int), 0, &dataLength);
+    if(result == ERR_UEM_NOERROR) {
+        if (led == 1) {
+            digitalWrite(OLLO_P4_SIG1, HIGH);  // set to as HIGH LED is turn-off
+        } else {
+            digitalWrite(OLLO_P4_SIG1, LOW);   // set to as LOW LED is turn-on
+        }
+	} 
+}
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+    digitalWrite(OLLO_P4_SIG1, HIGH);  // set to as HIGH LED is turn-off
+}
+
+TASK_CODE_END

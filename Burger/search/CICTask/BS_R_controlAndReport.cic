@@ -35,8 +35,10 @@ TASK_CODE_BEGIN
 STATIC int port_color;
 STATIC int port_distance;
 STATIC int port_target;
+STATIC int port_group;
 STATIC int port_direction;
 STATIC int port_isFound;
+STATIC int port_isLeader;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
@@ -55,8 +57,10 @@ TASK_INIT
     port_color = PORT_INITIALIZE(TASK_ID, "color");
     port_distance = PORT_INITIALIZE(TASK_ID, "distance");
     port_target = PORT_INITIALIZE(TASK_ID, "target");
+    port_group = PORT_INITIALIZE(TASK_ID, "group");
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
     port_isFound = PORT_INITIALIZE(TASK_ID, "isFound");
+    port_isLeader = PORT_INITIALIZE(TASK_ID, "isLeader");
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
@@ -78,6 +82,9 @@ TASK_GO
     int color = 0;
     int direction = STOP_;
     int target = 0;
+    int group = 0;
+    int isLeader = 0;
+    UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromQueue(port_distance, (unsigned char *)&distance, sizeof(int), 0 , &dataLength);
@@ -107,9 +114,15 @@ TASK_GO
     }
     
 	printf("color: %d, count: %d, target: %d, direction: %d, distance: %d\n", color, count, target, direction, distance);
-    
+
     UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataLength);
     UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);
+    if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED) {
+        isLeader = LIBCALL(leader, get_leader, group);
+        if (isLeader == THIS_ROBOT_ID){
+            UFPort_WriteToBuffer(port_isLeader, (unsigned char *)&isLeader, sizeof(int), 0 , &dataLength);
+        }
+    }
 }
 
 /////////////////////////////////////
