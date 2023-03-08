@@ -197,7 +197,7 @@
         <port id="1" export="true" name="isFound" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
-        <port id="2" export="true" name="isLeader" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="2" export="false" name="isLeader" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </outport_list>
