@@ -218,7 +218,7 @@
         <hardware Architecture="arm" Platform="Linux" Runtime="Native" ProcessorType="CPU" />
       </HardwareDependency>
     </task>
-    <task name="LED" type="Computational">
+    <task name="O_LED" type="Computational">
       <config>
         <location x="352" y="232" width="80" height="40" />
         <parameter name="CICFile" value="BS_O_LED.cic" />
