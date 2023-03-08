@@ -124,9 +124,12 @@ TASK_GO
     for (count = count / sizeof(group_state); count > 0 ; count--) {
         UFPort_ReadFromQueue(port_group_state, (unsigned char*) group_state, sizeof(group_state), 0, &length);
         if (group_state[1] == TRUE) {
+            SEMO_LOG_INFO("Leader Selection Start (Group Id %d)", group_state[0]);
             LIBCALL(leader, set_leader_selection_state, group_state[0], LEADER_SELECTION_NOT_SELECTED);
             LIBCALL(leader, set_leader, group_state[0], THIS_ROBOT_ID);
+            updateTime(group_state[0]); 
         } else {
+            SEMO_LOG_INFO("Leader Selection Stop (Group Id %d)", group_state[0]);
             LIBCALL(leader, set_leader_selection_state, group_state[0], LEADER_SELECTION_STOP);
         }
     }
