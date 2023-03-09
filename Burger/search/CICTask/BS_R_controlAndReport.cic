@@ -120,6 +120,12 @@ TASK_GO
     if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED) {
         isLeader = LIBCALL(leader, get_leader, group);
         if (isLeader == THIS_ROBOT_ID){
+            isLeader = 1;
+            SEMO_LOG_INFO("I'm leader (%d) of group: %d", THIS_ROBOT_ID, group);
+            UFPort_WriteToBuffer(port_isLeader, (unsigned char *)&isLeader, sizeof(int), 0 , &dataLength);
+        } else {
+            isLeader = 0;
+            SEMO_LOG_INFO("I'm not leader (%d) of group: %d", THIS_ROBOT_ID, group);
             UFPort_WriteToBuffer(port_isLeader, (unsigned char *)&isLeader, sizeof(int), 0 , &dataLength);
         }
     }
