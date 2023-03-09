@@ -22,6 +22,7 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
+STATIC int port_group;
 STATIC int port_arg1;
 STATIC int port_max;
 STATIC int port_ret;
@@ -36,6 +37,7 @@ STATIC int sharedValue;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
+    port_group = PORT_INITIALIZE(TASK_ID, "group");
     port_arg1 = PORT_INITIALIZE(TASK_ID, "arg1");
     port_max = PORT_INITIALIZE(TASK_ID, "max");
     port_ret = PORT_INITIALIZE(TASK_ID, "ret");
@@ -57,9 +59,18 @@ TASK_GO
     int numOfReadWrite = 0;
     int arg1 = 0;
     int max = 0; //max
+    int group;
     int receivedSharedValue = 0;
+    UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(group), 0 , &numOfReadWrite);
     UFPort_ReadFromBuffer(port_arg1, (unsigned char *)&arg1, sizeof(arg1), 0 , &numOfReadWrite);
     UFPort_ReadFromBuffer(port_max, (unsigned char *)&max, sizeof(max), 0 , &numOfReadWrite);
+    if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED){
+        SEMO_LOG_INFO("leader selected");
+        semo_int32 leader = LIBCALL(leader, get_leader, group);
+        if (leader == THIS_ROBOT_ID){
+            SEMO_LOG_INFO("i\'m leader");
+        }
+    }
 
     if (LIBCALL(libGroupSum, avail_GROUP_SUM_action)){
         LIBCALL(libGroupSum, get_GROUP_SUM_action, &receivedSharedValue);
