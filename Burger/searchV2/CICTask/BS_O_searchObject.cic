@@ -1,0 +1,78 @@
+/************************************
+ *
+ * File : detectMotion.cic
+ * Date : Nov 11, 2022 10:35 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <OLLO.h>
+
+// ##DEFINE_SECTION::START
+#define colorOLLOPort 1
+
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_color;
+// ##DEFINE_PORT_SECTION::END
+
+// ##DEFINE_MULTICAST_PORT_SECTION::START
+// ##DEFINE_MULTICAST_PORT_SECTION::END
+
+static OLLO colorSensor;          // OLLO.cpp (.arduino15/~~~~)
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_color = PORT_INITIALIZE(TASK_ID, "color");
+// ##INIT_PORT_SECTION::END
+
+// ##INIT_MULTICAST_PORT_SECTION::START
+// ##INIT_MULTICAST_PORT_SECTION::END
+
+    // TODO: task initialize code
+   colorSensor.begin(colorOLLOPort, COLOR_SENSOR);
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int color = 0;
+    color = colorSensor.read(colorOLLOPort, COLOR_SENSOR);
+    int writtenLength;
+    UFPort_WriteToBuffer(port_color, (unsigned char*)&color, sizeof(int), 0, &writtenLength);
+}
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END
+
