@@ -186,10 +186,13 @@
         <port id="2" export="true" name="target" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
-        <port id="3" export="true" name="group" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="3" export="true" name="area" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
-        <port id="4" export="false" name="isFrontMember" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+        <port id="4" export="true" name="group" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
+          <rate id="0" mode="Default" rate="1" />
+        </port>
+        <port id="5" export="false" name="isFrontMember" type="overwritable" sample_size="4" sample_rate="Fixed" description="">
           <rate id="0" mode="Default" rate="1" />
         </port>
       </inport_list>

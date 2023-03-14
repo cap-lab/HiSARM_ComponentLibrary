@@ -15,6 +15,9 @@
 #define YELLOW 4
 #define RED 3
 #define BLACK 2
+
+#define R1 0
+#define R2 1
 // ##DEFINE_SECTION::END
 
 enum DIRECTION {
@@ -35,6 +38,7 @@ TASK_CODE_BEGIN
 STATIC int port_color;
 STATIC int port_distance;
 STATIC int port_target;
+STATIC int port_area;
 STATIC int port_group;
 STATIC int port_direction;
 STATIC int port_isFound;
@@ -58,6 +62,7 @@ TASK_INIT
     port_color = PORT_INITIALIZE(TASK_ID, "color");
     port_distance = PORT_INITIALIZE(TASK_ID, "distance");
     port_target = PORT_INITIALIZE(TASK_ID, "target");
+    port_area = PORT_INITIALIZE(TASK_ID, "area");
     port_group = PORT_INITIALIZE(TASK_ID, "group");
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
     port_isFound = PORT_INITIALIZE(TASK_ID, "isFound");
@@ -84,11 +89,13 @@ TASK_GO
     int color = 0;
     int direction = STOP_;
     int target = 0;
+    int area = 0;
     int group = 0;
     int isLeader = 0;
     int isFrontMember = 0;
     UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
+    UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_isFrontMember, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromQueue(port_distance, (unsigned char *)&isFrontMember, sizeof(int), 0 , &dataLength);
@@ -126,7 +133,7 @@ TASK_GO
                 if (isFrontMember == 1){
                     direction = STOP_;
                 }else{
-                    if (group % 2 == 0){
+                    if (area % 2 == 0){
                         direction = LEFT_;
                     }else{
                         direction = RIGHT_;
