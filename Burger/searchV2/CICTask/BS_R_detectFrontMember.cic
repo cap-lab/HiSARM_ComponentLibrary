@@ -48,8 +48,6 @@ TASK_INIT
     }
 
     cv::namedWindow("Tracking", cv::WINDOW_AUTOSIZE);
-
-    direction = STOP_;
 }
 
 /////////////////////////////////////
