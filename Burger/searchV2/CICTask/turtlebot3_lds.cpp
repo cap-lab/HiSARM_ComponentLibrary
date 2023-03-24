@@ -1,4 +1,6 @@
 #include "turtlebot3_lds.h"
+#include <iostream>
+
 
 static LiPkg *pkg = NULL;
 static int init = 0;
@@ -42,7 +44,7 @@ FrameData getFrameData() {
     return pkg->GetFrameData();
 }
 
-int getFrontDistance(const FrameData &data, int l_angle, int r_angle){
+int getFrontDistance(const FrameData &data, int r_angle, int l_angle){
     float angle_increment = (data.angle_max - data.angle_min) / data.len;
     float angle_point = data.angle_min; //1st point's angle
 
@@ -51,7 +53,9 @@ int getFrontDistance(const FrameData &data, int l_angle, int r_angle){
         // check one of 10 points because there are too many points.
         angle_point += angle_increment;
         if(data.intensities[i]>100){ //if data is reliable
-            if(angle_point < l_angle || r_angle < angle_point){ //front
+            int tmp_angle = (int) angle_point % 360;
+            if(tmp_angle < r_angle || l_angle < tmp_angle){ //front
+                // std::cout << "tmp_angle : " << tmp_angle << " " << "data.distance[i] : " << data.distance[i] << "  data.intensities[i] : " << (int)data.intensities[i] << std::endl;
                 front_distance = (front_distance < data.distance[i]) ? front_distance : data.distance[i];
             }
         }
@@ -59,3 +63,4 @@ int getFrontDistance(const FrameData &data, int l_angle, int r_angle){
 
     return front_distance;
 }
+

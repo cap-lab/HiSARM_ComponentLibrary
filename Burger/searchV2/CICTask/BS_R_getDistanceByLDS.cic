@@ -67,7 +67,7 @@ TASK_GO
     }
     
     int dataLength;
-    UFPort_WriteToQueue(port_distance, (unsigned char *)&front_distance, sizeof(int), 0, &dataLength);
+    UFPort_WriteToBuffer(port_distance, (unsigned char *)&front_distance, sizeof(int), 0, &dataLength);
 }
 
 /////////////////////////////////////

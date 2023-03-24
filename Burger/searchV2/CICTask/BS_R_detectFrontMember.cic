@@ -8,6 +8,10 @@
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
+
+//#include <time.h>
+//#include <sys/time.h>
+
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
@@ -26,13 +30,33 @@ TASK_CODE_BEGIN
 STATIC int port_isFrontMember;
 // ##DEFINE_PORT_SECTION::END
 
+/*static long long s_llCurTime = 0;
+static long long s_llStartTime = 0;
+
+static long long getCurTickInMicroSeconds()
+{
+    long long tTime = 0;
+    struct timespec stTime;
+    int nRet = 0;
+
+    nRet = clock_gettime(CLOCK_MONOTONIC, &stTime);
+
+    tTime = (((long long) stTime.tv_sec) * 1000000) + (stTime.tv_nsec / 1000);
+
+    return tTime;
+}*/
+
+
 static cv::VideoCapture cap;
 static cv::Mat frame;
 cv::Mat detectObjectByColor(const cv::Mat &frame);
 
+static int isFrontMember;
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
+
+static int number = 0;
 
 TASK_INIT
 {
@@ -47,7 +71,9 @@ TASK_INIT
         std::cout << "Failed to open camera." << std::endl;
     }
 
-    cv::namedWindow("Tracking", cv::WINDOW_AUTOSIZE);
+    isFrontMember = 1;
+
+    number = 0;
 }
 
 /////////////////////////////////////
@@ -57,11 +83,14 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
-    int isFrontMember = 0;
+     //s_llStartTime = getCurTickInMicroSeconds();
+
     if (cap.read(frame))
     {
+        number++;
         // image_processing
         cv::Mat processed_image = detectObjectByColor(frame);
+
         // Calculate the moments of the threshold image
         cv::Moments theMoments = cv::moments(processed_image);
 
@@ -69,8 +98,9 @@ TASK_GO
         double dM10 = theMoments.m10;
         double dArea = theMoments.m00;
 
+        std::cout << "dArea : " << dArea << std::endl;
         // if the area <= 10000, lets consider that there are no objects in the image because of the noise
-        if (dArea > 10000)
+        if (dArea > 5000000)
         {
             // calculate the position of the ball
             int center_x = dM10 / dArea;
@@ -80,19 +110,35 @@ TASK_GO
             {
                 isFrontMember = 1;
                 std::cout << "Front member detected" << std::endl;
+            } else {
+                isFrontMember = 0;
+                std::cout << "No Front member" << std::endl;
             }
-
-            cv::imshow("Tracking", frame);
-            cv::waitKey(5);
+        }else {
+            isFrontMember = 0;
+            std::cout << "No Front member_" << std::endl;
         }
+
+        cv::waitKey(5);
     }
     else
     {
-        std::cout << "Capture read error" << std::endl;
+        std::cout << "Capture read error. " << number << std::endl;
+        cap.release();
+        number = 0;
+        cap.open("rtsp://127.0.0.1:8554/unicast");
+        if (!cap.isOpened())
+        {
+            std::cout << "Failed to reopen camera." << std::endl;
+        }
     }
 
     int numOfWrite;
     UFPort_WriteToBuffer(port_isFrontMember, (unsigned char *)&isFrontMember, sizeof(int), 0, &numOfWrite);
+
+    //s_llCurTime = getCurTickInMicroSeconds();
+    //std::cout << "elapsed time: " << (s_llCurTime - s_llStartTime) << std::endl;
+
 }
 
 cv::Mat detectObjectByColor(const cv::Mat &frame)
@@ -104,7 +150,7 @@ cv::Mat detectObjectByColor(const cv::Mat &frame)
     // threshold the image
     cv::Mat imageThresholded;
     // cv::inRange(imageHSV, cv::Scalar(lowValueHue,lowValueSat,lowValueVal), cv::Scalar(highValueHue,hig    hValueSat,highValueVal), imageThresholded);
-    cv::inRange(imageHSV, cv::Scalar(0, 0, 0), cv::Scalar(100, 255, 33.16), imageThresholded);
+    cv::inRange(imageHSV, cv::Scalar(0, 0, 0), cv::Scalar(200, 255, 65), imageThresholded);
 
     // morphologoical opening(remove small objects from the foreground)
     cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
@@ -125,7 +171,6 @@ TASK_WRAPUP
 {
     // TODO: task wrapup code
     cap.release();
-    cv::destroyAllWindows();
 }
 
 TASK_CODE_END

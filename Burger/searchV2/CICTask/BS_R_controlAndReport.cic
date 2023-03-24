@@ -10,6 +10,8 @@
 /////////////////////////////////////
 #include <iostream>
 #include <string>
+//#include <time.h>
+//#include <sys/time.h>
 
 // ##DEFINE_SECTION::START
 #define YELLOW 4
@@ -74,6 +76,8 @@ TASK_INIT
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
+    isFound = 0;
+    distance = 8000;
 }
 
 static int count=0;
@@ -81,6 +85,23 @@ static int count=0;
 /////////////////////////////////////
 // go code
 /////////////////////////////////////
+/*
+static long long s_llCurTime = 0;
+static long long s_llStartTime = 0;
+
+static long long getCurTickInMicroSeconds()
+{
+    long long tTime = 0;
+    struct timespec stTime;
+    int nRet = 0;
+
+    nRet = clock_gettime(CLOCK_MONOTONIC, &stTime);
+
+    tTime = (((long long) stTime.tv_sec) * 1000000) + (stTime.tv_nsec / 1000);
+
+    return tTime;
+}
+*/
 
 TASK_GO
 {
@@ -92,14 +113,17 @@ TASK_GO
     int area = 0;
     int group = 0;
     int isLeader = 0;
-    int isFrontMember = 0;
+    int isFrontMember = 1;
+
+
+    UFPort_ReadFromBuffer(port_isFrontMember, (unsigned char *)&isFrontMember, sizeof(int), 0 , &dataLength); 
     UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0 , &dataLength);
+    UFPort_ReadFromBuffer(port_distance, (unsigned char *)&distance, sizeof(int), 0 , &dataLength);
+     //s_llStartTime = getCurTickInMicroSeconds();
     UFPort_ReadFromBuffer(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
-    UFPort_ReadFromBuffer(port_isFrontMember, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
-    UFPort_ReadFromQueue(port_distance, (unsigned char *)&isFrontMember, sizeof(int), 0 , &dataLength);
-    
+
     if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED) {
         isLeader = LIBCALL(leader, get_leader, group);
         if (isLeader == THIS_ROBOT_ID){
@@ -110,7 +134,6 @@ TASK_GO
             // SEMO_LOG_INFO("I'm not leader (%d) of group: %d", THIS_ROBOT_ID, group);
         }
     }
-    UFPort_WriteToBuffer(port_isLeader, (unsigned char *)&isLeader, sizeof(int), 0 , &dataLength);
     
     if (isFound == 0){
         std::string robotName = THIS_ROBOT_NAME;
@@ -145,11 +168,17 @@ TASK_GO
         }
     }
     
-	printf("color: %d, count: %d, target: %d, direction: %d, distance: %d\n", color, count, target, direction, distance);
+    printf("color: %d, count: %d, target: %d, direction: %d, distance: %d, isFrontMember: %d\n", color, count, target, direction, distance, isFrontMember);
 
     UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0 , &dataLength);
-    UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);
+    if(isFound == 1) {
+        UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);
+    }
 
+    UFPort_WriteToBuffer(port_isLeader, (unsigned char *)&isLeader, sizeof(int), 0 , &dataLength);
+
+    //s_llCurTime = getCurTickInMicroSeconds();
+    //std::cout << "elapsed time: " << (s_llCurTime - s_llStartTime) << std::endl;
 
 }
 
