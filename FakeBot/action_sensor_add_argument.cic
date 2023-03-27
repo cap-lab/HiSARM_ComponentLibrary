@@ -1,0 +1,98 @@
+/************************************
+ *
+ * File : [TASK_NAME]
+ * Date : [DATE]
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#pragma once
+#include <iostream>
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_arg1;
+STATIC int port_output;
+STATIC int group_sensor;
+STATIC int port_sensor;
+STATIC int group_actuator;
+STATIC int port_actuator;
+// ##DEFINE_PORT_SECTION::END
+
+STATIC int count;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_arg1 = PORT_INITIALIZE(TASK_ID, "arg1");
+    port_output = PORT_INITIALIZE(TASK_ID, "output");
+    UFMulticast_Initialize(TASK_ID, "sensor", &group_sensor, &port_sensor);
+    UFMulticast_Initialize(TASK_ID, "actuator", &group_actuator, &port_actuator);
+// ##INIT_PORT_SECTION::END
+
+    // TODO: task initialize code
+    count = 0;
+
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int numOfRead = 0;
+    int arg1 = 0;
+    int value;
+    int result;
+    result = UFPort_ReadFromBuffer(port_arg1, (unsigned char *)&arg1, sizeof(arg1), 0 , &numOfRead);
+    ERRIFGOTO(result, EXIT_);
+    result = UFMulticastPort_ReadFromBuffer(group_sensor, port_sensor, (unsigned char *)&value, sizeof(int), 0, &numOfRead);
+    ERRIFGOTO(result, EXIT_);
+
+    std::cout << "TASK_NAME=" << TASK_NAME << ", arg=" <<  arg1 << ", sensor= " << value << "actuator=" << arg1+value << std::endl;
+    value += arg1;
+    result = UFMulticastPort_WriteToBuffer(group_actuator, port_actuator, (unsigned char *) &value, sizeof(int), 0, &numOfRead);
+    ERRIFGOTO(result, EXIT_);
+    if (count > 30) {
+        UFPort_WriteToBuffer(port_output, (unsigned char *)&output, sizeof(output), 0, &numOfRead);
+    } else {
+        count++;
+    }
+
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        std::cout << "TASK_NAME=" << TASK_NAME << ", communication error=" << result << std::endl;
+    }
+}
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END
+
