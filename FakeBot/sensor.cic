@@ -52,7 +52,7 @@ TASK_INIT
 
 TASK_GO
 {
-    int numOfRead;
+    int num;
     int result;
 
     if (value < 0) {
@@ -62,7 +62,7 @@ TASK_GO
     }
     value += delta;
     
-    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&value, sizeof(int), 0 , &numOfRead);
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&value, sizeof(int), &num);
     ERRIFGOTO(result, EXIT_);
 
     std::cout << "TASK_NAME=" << TASK_NAME << ", sensor=" <<  value << std::endl;

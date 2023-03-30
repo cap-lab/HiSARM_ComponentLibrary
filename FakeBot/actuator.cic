@@ -51,7 +51,7 @@ TASK_GO
     int numOfRead;
     int result;
 
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&value, sizeof(int), 0 , &numOfRead);
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&value, sizeof(int), &numOfRead);
     ERRIFGOTO(result, EXIT_);
 
     std::cout << "TASK_NAME=" << TASK_NAME << ", actuator=" <<  value << std::endl;
