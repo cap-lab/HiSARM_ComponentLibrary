@@ -31,6 +31,9 @@ STATIC int port_led;
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
 
+STATIC int count;
+STATIC int increase;
+
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -46,7 +49,8 @@ TASK_INIT
 // ##INIT_MULTICAST_PORT_SECTION::END
 
     // TODO: task initialize code
-
+	count = 0;
+	increase = 1;
 }
 
 

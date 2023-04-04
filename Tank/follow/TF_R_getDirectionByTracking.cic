@@ -61,7 +61,7 @@ TASK_GO
     TURTLEBOT_CAMERA image;
     uem_result result;
     // TODO: task main code
-    result = UFMulticastPort_ReadFromBuffer(group_camera, port_camera, (unsigned char *) &image, sizeof(TURTLEBOT_CAMERA), &dataNum)
+    result = UFMulticastPort_ReadFromBuffer(group_camera, port_camera, (unsigned char *) &image, sizeof(TURTLEBOT_CAMERA), &dataNum);
     if (dataNum == sizeof(TURTLEBOT_CAMERA) && result == ERR_UEM_NOERROR)
     {
         cv::Mat frame(TURTLEBOT_CAMERA_HEIGHT, TURTLEBOT_CAMERA_WIDTH, CV_8UC(TURTLEBOT_CAMERA_CHANNEL), image);

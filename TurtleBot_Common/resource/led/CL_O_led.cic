@@ -62,7 +62,7 @@ TASK_GO
 {
     // TODO: task main code
     int dataLength;
-    TURTLEBOT_LED led = 0;
+    TURTLEBOT_LED led = {FALSE, FALSE};
 	uem_result result;
     result = UFPort_ReadFromQueue(port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), 0, &dataLength);
     if(result == ERR_UEM_NOERROR) {

@@ -32,7 +32,7 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     UFMulticastPort_Initialize(TASK_ID, "motion", &group, &port);
-    UFPort_Initialize(TASK_ID, "motionFromOpenCR", &port_color);
+    UFPort_Initialize(TASK_ID, "motionFromOpenCR", &port_motion);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code

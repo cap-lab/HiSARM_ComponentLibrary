@@ -39,7 +39,7 @@ TASK_INIT
 {
     // ##INIT_PORT_SECTION::START
     port_isFrontMember = PORT_INITIALIZE(TASK_ID, "isFrontMember");
-    UFMulticastPort_Initailize(TASK_ID, "camera", &group_camera, &port_camera);
+    UFMulticastPort_Initialize(TASK_ID, "camera", &group_camera, &port_camera);
     // ##INIT_PORT_SECTION::END
 
     // TODO: task initialize code

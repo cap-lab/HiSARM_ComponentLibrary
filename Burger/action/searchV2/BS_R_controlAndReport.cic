@@ -94,7 +94,6 @@ TASK_GO
     UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0 , &dataLength);
-    UFPort_ReadFromBuffer(port_distance, (unsigned char *)&distance, sizeof(int), 0 , &dataLength);
     UFMulticastPort_ReadFromBuffer(group_color, port_color, (unsigned char *)&color, sizeof(int), &dataLength);
     UFMulticastPort_ReadFromBuffer(group_lds, port_lds, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);
 

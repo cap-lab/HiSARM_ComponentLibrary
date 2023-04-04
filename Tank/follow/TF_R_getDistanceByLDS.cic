@@ -75,7 +75,7 @@ TASK_GO
             direction = LEFT_;
         }
     }
-    SEMO_LOG_INFO("found %d, distance %d, direction %d", found, lds.frong, direction);
+    SEMO_LOG_INFO("found %d, distance %d, direction %d", found, lds.front, direction);
 
     result = UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
     if(result != ERR_UEM_NOERROR) {
@@ -91,7 +91,7 @@ TASK_WRAPUP
 {
     // TODO: task wrapup code
     int dataLength;
-    direction = STOP_;
+    int direction = STOP_;
     UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
 }
 

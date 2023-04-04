@@ -163,8 +163,7 @@ static void convertDToV_Tank(const int direction, ControlVelocity *vel){
 }
 
 static void convertDToV_Waffle(const int direction, ControlVelocity *vel){
-    switch(direction)
-    {       From 
+    switch(direction) {
         case STOP_:           
             vel->linear_x = 0;
             vel->angular_z = 0;

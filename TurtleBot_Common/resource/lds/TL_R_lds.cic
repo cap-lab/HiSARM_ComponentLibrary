@@ -126,7 +126,7 @@ TASK_GO
         std::vector<int> around_distance=getAroundDistance(data);
         lds.front = around_distance[0];
         lds.right = around_distance[1];
-        lds.back = around_distance[2]
+        lds.back = around_distance[2];
         lds.left = around_distance[3];
         result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);
     }
