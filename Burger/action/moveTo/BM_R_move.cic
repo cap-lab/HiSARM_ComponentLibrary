@@ -1,0 +1,125 @@
+/************************************
+ *
+ * File : checkDistanceByLDS.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <stdio.h>
+#include <chrono>
+#include <thread>
+#include <random>
+#include "turtlebot3_wheel.h"
+#include "turtlebot3_lds.h"
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_area;
+STATIC int port_arrived;
+STATIC int group_lds;
+STATIC int port_lds;
+STATIC int group_wheel;
+STATIC int port_wheel;
+// ##DEFINE_PORT_SECTION::END
+
+//for random
+static int arrived;
+
+enum AREA {
+    R1,
+    R2
+};
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_area = PORT_INITIALIZE(TASK_ID, "area");
+    port_arrived = PORT_INITIALIZE(TASK_ID, "arrived");
+    UFMulticastPort_Initialize(TASK_ID, "lds", &group_lds, &port_lds);
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &group_wheel, &port_wheel);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+
+    //////////////////////// init LDS ///////////////////////////
+    arrived=0;
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+void moveSomeDuration(int direction, int time) {
+    int dataLength;
+    uem_result result;
+    result = UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
+    ERRIFGOTO(result, EXIT_);
+    std::this_thread::sleep_for(std::chrono::milliseconds(time));
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+TASK_GO
+{
+    int dataLength;
+	int area=R1;
+    int direction = STOP_;
+    int room_direction = [RIGHT_, LEFT_];
+    TURTLEBOT_LDS lds;
+    uem_result result = ERR_UEM_NOERROR;
+    UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0, &dataLength);
+    UFMulticastPort_ReadFromBuffer(group_lds, port_lds, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);
+    if (arrived == 0){
+        if(lds.front<350){
+            direction = STOP_;
+        }else if(lds.left>1000 && lds.right>1000 && arrived==0){
+            arrived=1;
+            moveSomeDuration(room_dicrection[area], 1000);
+            moveSomeDuration(FORWARD_, 4000);
+            moveSomeDuration(room_dicrection[area], dis(gen));
+            moveSomeDuration(FORWARD_, 4000);
+            direction = STOP_;	
+        }else{
+            direction = FORWARD_;
+        }
+        result = UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
+        UFPort_WriteToBuffer(port_arrived, (unsigned char *)&arrived, sizeof(int), 0, &dataLength);
+    }    
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END

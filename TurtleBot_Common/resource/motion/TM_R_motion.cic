@@ -1,0 +1,71 @@
+/************************************
+ *
+ * File : checkDistanceByLDS.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+// #include <thread>
+// #include <chrono>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_motion;
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "motion", &group, &port);
+    UFPort_Initialize(TASK_ID, "motionFromOpenCR", &port_color);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int motion;
+    int dataNum;
+    uem_result result;
+    result = UFPort_ReadFromQueue(port_motion, (unsigned char *)&motion, sizeof(int), 0, &dataNum);
+    ERRIFGOTO(result, EXIT_);
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&motion, sizeof(int), &dataNum);
+    ERRIFGOTO(result, EXIT_);
+EXIT_:
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END

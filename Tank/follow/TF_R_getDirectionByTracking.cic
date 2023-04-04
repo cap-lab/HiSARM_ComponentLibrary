@@ -1,0 +1,141 @@
+/************************************
+ *
+ * File : checkDistanceByTracking.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <string>
+#include "turtlebot3_camera.h"
+#include "turtlebot3_wheel.h"
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_direction;
+STATIC int port_found;
+STATIC int group_camera;
+STATIC int port_camera;
+// ##DEFINE_PORT_SECTION::END
+
+static cv::Mat frame;
+static cv::Mat detectObjectByColor(const cv::Mat &frame);
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_direction = PORT_INITIALIZE(TASK_ID, "direction");
+    port_found = PORT_INITIALIZE(TASK_ID, "found");
+    UFMulticastPort_Initialize(TASK_ID, "camera", &group_camera, &port_camera);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int found = 0;
+    int dataNum = 0;
+    int direction = LEFT_;
+    TURTLEBOT_CAMERA image;
+    uem_result result;
+    // TODO: task main code
+    result = UFMulticastPort_ReadFromBuffer(group_camera, port_camera, (unsigned char *) &image, sizeof(TURTLEBOT_CAMERA), &dataNum)
+    if (dataNum == sizeof(TURTLEBOT_CAMERA) && result == ERR_UEM_NOERROR)
+    {
+        cv::Mat frame(TURTLEBOT_CAMERA_HEIGHT, TURTLEBOT_CAMERA_WIDTH, CV_8UC(TURTLEBOT_CAMERA_CHANNEL), image);
+        //image_processing
+        cv::Mat processed_image = detectObjectByColor(frame);
+        //Calculate the moments of the threshold image
+        cv::Moments theMoments = cv::moments(processed_image);
+    
+        double dM01 = theMoments.m01;
+        double dM10 = theMoments.m10;
+        double dArea = theMoments.m00;
+
+        // if the area <= 10000, lets consider that there are no objects in the image because of the noise
+        if(dArea> 10000)
+        {
+            //calculate the position of the ball
+            int center_x = dM10/dArea;
+            int center_y  =dM01/dArea;
+
+            //for debugging
+            if (center_x >=0 && center_y >=0){
+                cv::circle(frame, cv::Point(center_x, center_y), 10, cv::Scalar(255,255,255),2);
+                std::cout << "center_x=" << center_x  << std::endl;
+            }
+
+            int width = frame.size().width;
+            if(center_x <= (width/3)){
+                direction = LEFT_;
+            }else if (center_x > (width*2/3)){
+                direction = RIGHT_;
+            }else{
+                direction = FORWARD_;
+            }
+            found = 1;
+
+            cv::waitKey(5);
+        }        
+    }
+    
+    UFPort_WriteToQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataNum);
+    UFPort_WriteToQueue(port_found, (unsigned char *)&found, sizeof(int), 0, &dataNum);
+}
+
+
+static cv::Mat detectObjectByColor(const cv::Mat &frame){
+    cv::Mat imageHSV;      
+	//convert the capture fram from BGR TO HSV
+	cv::cvtColor(frame, imageHSV, cv::COLOR_BGR2HSV);     
+
+	//threshold the image
+	cv::Mat imageThresholded;
+	//cv::inRange(imageHSV, cv::Scalar(lowValueHue,lowValueSat,lowValueVal), cv::Scalar(highValueHue,highValueSat,highValueVal), imageThresholded);
+	cv::inRange(imageHSV, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 40.16), imageThresholded);
+
+	//morphologoical opening(remove small objects from the foreground)
+	cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+	cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+
+	//morphological closing fill in small holes of the foreground)
+	cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+	cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5,5)));
+
+	return imageThresholded;
+ }
+ 
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+
+TASK_CODE_END

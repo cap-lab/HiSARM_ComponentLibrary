@@ -1,0 +1,106 @@
+/************************************
+ *
+ * File : R_makeDecision.cic
+ * Date : Nov 11, 2022 10:55 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include "turtlebot3_lds.h"
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_isEnemy;
+STATIC int group_motion;
+STATIC int port_motion;
+STATIC int group_lds;
+STATIC int port_lds;
+// ##DEFINE_PORT_SECTION::END
+
+// ##DEFINE_MULTICAST_PORT_SECTION::START
+// ##DEFINE_MULTICAST_PORT_SECTION::END
+static int motionCount = 0;
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_isEnemy = PORT_INITIALIZE(TASK_ID, "isEnemy");
+    UFMulticastPort_Initialize(TASK_ID, "motion", &group_motion, &port_motion);
+    UFMulticastPort_Initialize(TASK_ID, "lds", &group_lds, &port_lds);
+// ##INIT_PORT_SECTION::END
+
+// ##INIT_MULTICAST_PORT_SECTION::START
+// ##INIT_MULTICAST_PORT_SECTION::END
+
+    // TODO: task initialize code
+    
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int dataLength;
+    int motion;
+    int findEnemy=0;
+    TURTLEBOT_LDS lds;
+    uem_result result;
+
+    result = UFMulticastPort_ReadFromBuffer(group_motion, port_motion, (unsigned char *)&motion, sizeof(int), &dataLength);    
+    ERRIFGOTO(result, EXIT_);
+    result = UFMulticastPort_ReadFromBuffer(group_lds, port_lds, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);    
+    ERRIFGOTO(result, EXIT_);
+
+    if (motion==0){
+        motionCount++;
+    }else{
+        motionCount = 0;
+    }
+
+    //if pir_sensor detect a motion
+    if (motionCount > 1 && lds.front < 1000){
+        findEnemy=1;
+    }else{
+        findEnemy=0;
+    }
+    SEMO_LOG_INFO("motion %d, distance %d, findEnemy %d", motion, lds.front, findEnemy);
+    
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%x)", result);
+    }
+    UFPort_WriteToBuffer(port_isEnemy, (unsigned char *)&findEnemy, sizeof(int), 0, &dataLength);
+}
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END

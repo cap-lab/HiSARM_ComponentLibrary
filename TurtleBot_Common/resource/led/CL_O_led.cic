@@ -1,0 +1,95 @@
+/************************************
+ *
+ * File : dualLED.cic
+ * Date : Nov 9, 2022 1:03 PM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <Arduino.h>
+#include "turtlebot3_led.h"
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+#define OLLO_SLEEP  46
+#define OLLO_P4_SIG1  73
+#define OLLO_P4_SIG2  74
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_led;
+// ##DEFINE_PORT_SECTION::END
+
+// ##DEFINE_MULTICAST_PORT_SECTION::START
+// ##DEFINE_MULTICAST_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_led = PORT_INITIALIZE(TASK_ID, "led");
+// ##INIT_PORT_SECTION::END
+
+// ##INIT_MULTICAST_PORT_SECTION::START
+// ##INIT_MULTICAST_PORT_SECTION::END
+
+    // TODO: task initialize code
+    pinMode(OLLO_SLEEP, OUTPUT);
+    digitalWrite(OLLO_SLEEP, HIGH); 
+    pinMode(OLLO_P4_SIG1, OUTPUT);
+    pinMode(OLLO_P4_SIG2, OUTPUT);
+     
+    //turnOnLeftLED(LED_OLLO_PORT);
+    //turnOnRightLED(LED_OLLO_PORT);
+}
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int dataLength;
+    TURTLEBOT_LED led = 0;
+	uem_result result;
+    result = UFPort_ReadFromQueue(port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), 0, &dataLength);
+    if(result == ERR_UEM_NOERROR) {
+        if(led.left == TRUE) {
+            digitalWrite(OLLO_P4_SIG1, HIGH);  // set to as HIGH LED is turn-on
+        } else {
+            digitalWrite(OLLO_P4_SIG1, LOW);   // set to as LOW LED is turn-off
+        }
+        if (led.right == TRUE) {
+            digitalWrite(OLLO_P4_SIG2, HIGH);  // set to as HIGH LED is turn-on
+        } else {
+            digitalWrite(OLLO_P4_SIG2, LOW);   // set to as LOW LED is turn-off
+        }
+	} 
+}
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+    digitalWrite(OLLO_P4_SIG1, HIGH);  // set to as HIGH LED is turn-off
+    digitalWrite(OLLO_P4_SIG2, HIGH);  // set to as HIGH LED is turn-off
+}
+
+TASK_CODE_END

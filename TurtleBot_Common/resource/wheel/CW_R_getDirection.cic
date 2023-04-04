@@ -1,0 +1,75 @@
+/************************************
+ *
+ * File : checkDistanceByLDS.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <cstdlib>
+#include <string>
+#include <cctype>
+#include "turtlebot3_wheel.h"
+// #include <thread>
+// #include <chrono>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_direction;
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &group, &port);
+    UFPort_Initialize(TASK_ID, "direction", &port_direction);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int direction=STOP_;
+    int dataNum;
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&direction, sizeof(int), &dataNum);
+    ERRIFGOTO(result, EXIT_);
+    result = UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataNum);
+    ERRIFGOTO(result, EXIT_);
+EXIT_:
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END

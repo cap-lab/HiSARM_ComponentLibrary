@@ -1,0 +1,74 @@
+/************************************
+ *
+ * File : checkColor.cic
+ * Date : May 18, 2022 8:57 PM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <Arduino.h>
+#include "turtlebot3_buzzer.h"
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+#define BDPIN_BUZZER            31
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_buzzer;
+// ##DEFINE_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    port_buzzer = PORT_INITIALIZE(TASK_ID, "buzzer");
+// ##INIT_PORT_SECTION::END
+
+// ##INIT_MULTICAST_PORT_SECTION::START
+// ##INIT_MULTICAST_PORT_SECTION::END
+
+    // TODO: task initialize code
+    pinMode(BDPIN_BUZZER, OUTPUT);
+}
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int dataLength;
+    TURTLEBOT_BUZZER buzzer;
+	uem_result result;
+
+    result = UFPort_ReadFromQueue(port_buzzer, (unsigned char *)&buzzer, sizeof(TURTLEBOT_BUZZER), 0, &dataLength);
+    if(result == ERR_UEM_NOERROR) {
+        tone(BDPIN_BUZZER, buzzer.tone, buzzer.duration);
+	} 
+}
+
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END
