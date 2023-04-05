@@ -90,6 +90,7 @@ TASK_GO
             direction = STOP_;
         }
         result = UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &numOfWrite);
+        std::cout << "direction from remote: " << direction << std::endl;
     }
     if (result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("Communication error(%X)", result);

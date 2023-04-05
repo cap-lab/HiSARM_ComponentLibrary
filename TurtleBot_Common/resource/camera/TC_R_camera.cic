@@ -8,6 +8,10 @@
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
+
+#include <time.h>
+#include <sys/time.h>
+
 #include <string>
 #include "turtlebot3_camera.h"
 
@@ -34,6 +38,24 @@ static cv::VideoCapture cap;
 // init code
 /////////////////////////////////////
 
+/*static long long s_llCurTime = 0;
+static long long s_llStartTime = 0;
+
+static long long getCurTickInMicroSeconds()
+{
+    long long tTime = 0;
+    struct timespec stTime;
+    int nRet = 0;
+
+    nRet = clock_gettime(CLOCK_MONOTONIC, &stTime);
+
+    tTime = (((long long) stTime.tv_sec) * 1000000) + (stTime.tv_nsec / 1000);
+
+    return tTime;
+}*/
+
+
+
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
@@ -59,11 +81,17 @@ TASK_GO
     uem_result result = ERR_UEM_ERROR;
     cv::Mat frame;
     TURTLEBOT_CAMERA image;
+    
     // TODO: task main code
     if (cap.read(frame)) {
+        
+        //s_llStartTime = getCurTickInMicroSeconds();
         convertCVMatToArray(image, frame);
         result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&image, sizeof(TURTLEBOT_CAMERA), &numOfWrite);
         cv::waitKey(5);
+
+        //s_llCurTime = getCurTickInMicroSeconds();
+        //std::cout << "elapsed time: " << (s_llCurTime - s_llStartTime) << std::endl;
     } else {
         SEMO_LOG_ERROR("Camera Capture Error");
         cap.release();
@@ -76,6 +104,8 @@ TASK_GO
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);
     }
+
+    
 }
 
 

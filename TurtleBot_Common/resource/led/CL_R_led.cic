@@ -54,7 +54,7 @@ TASK_GO
     result = UFPort_WriteToBuffer(port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), 0, &dataNum);
     ERRIFGOTO(result, EXIT_);
 EXIT_:
-    if(result != ERR_UEM_ERROR) {
+    if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);
     }
 }

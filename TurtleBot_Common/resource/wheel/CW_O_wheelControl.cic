@@ -121,12 +121,12 @@ static void convertDToV_Burger(const int direction, ControlVelocity *vel){
         case RIGHT_:
             //std:: cout << "LEFT" << std::endl;
             vel->linear_x = 0;
-            vel->angular_z = INITIAL_ANGULAR_Z/7;
+            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7;
             break;
         case LEFT_:
             //std:: cout << "RIGHT" << std::endl;
             vel->linear_x = 0;
-            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7;
+            vel->angular_z = INITIAL_ANGULAR_Z/7;
             break;   
         default:
             //std:: cout << "Wheel Control : direction is not correct. " << std::endl;

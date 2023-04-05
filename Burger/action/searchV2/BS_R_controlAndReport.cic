@@ -90,7 +90,7 @@ TASK_GO
     int isFrontMember = 1;
     TURTLEBOT_LDS lds;
 
-    UFPort_ReadFromBuffer(port_isFrontMember, (unsigned char *)&isFrontMember, sizeof(int), 0 , &dataLength); 
+    UFPort_ReadFromQueue(port_isFrontMember, (unsigned char *)&isFrontMember, sizeof(int), 0 , &dataLength); 
     UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0 , &dataLength);
@@ -156,7 +156,9 @@ TASK_GO
 TASK_WRAPUP
 {
     // TODO: task wrapup code
-
+    int dataLength;
+    int direction = STOP_;
+    UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
 }
 
 TASK_CODE_END
