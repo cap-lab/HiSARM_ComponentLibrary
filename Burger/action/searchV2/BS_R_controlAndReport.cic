@@ -110,7 +110,7 @@ TASK_GO
     
     if (isFound == 0){
         std::string robotName = THIS_ROBOT_NAME;
-        if(robotName.compare("Burger_1")){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
+        if(robotName.compare("Burger_1") == 0){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
             target += 2;
         }
 
@@ -122,7 +122,7 @@ TASK_GO
 
         if (count > 2){ // to avoid error of fault sensor value, three continuous values must be detected to stop the search operation.
             isFound=1;
-            SEMO_LOG_INFO("taget found");
+            SEMO_LOG_INFO("target found");
             direction = STOP_;
         }else{  // if the distance is too close to obstacles or too far from the obstacles, the robot turns left to change the direction 
             if(lds.front < 350 || lds.front > 2000){ 

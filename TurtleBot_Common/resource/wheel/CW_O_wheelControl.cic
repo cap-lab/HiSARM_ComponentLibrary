@@ -151,11 +151,11 @@ static void convertDToV_Tank(const int direction, ControlVelocity *vel){
             break;
         case RIGHT_:
             vel->linear_x = 0;
-            vel->angular_z = INITIAL_ANGULAR_Z/7*1.43;
+            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7*1.43;
             break;
         case LEFT_:
             vel->linear_x = 0;
-            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7*1.43;
+            vel->angular_z = INITIAL_ANGULAR_Z/7*1.43;
             break;   
         default:
             break;
@@ -178,11 +178,11 @@ static void convertDToV_Waffle(const int direction, ControlVelocity *vel){
             break;
         case RIGHT_:
             vel->linear_x = 0;
-            vel->angular_z = INITIAL_ANGULAR_Z/7*1.88;
+            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7*1.88;
             break;
         case LEFT_:
             vel->linear_x = 0;
-            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7*1.88;
+            vel->angular_z = INITIAL_ANGULAR_Z/7*1.88;
             break;   
         default:
             break;

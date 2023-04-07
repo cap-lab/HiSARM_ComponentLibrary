@@ -67,11 +67,11 @@ TASK_GO
     UFPort_ReadFromQueue(port_found, (unsigned char *)&found, sizeof(int), 0, &dataLength);
     result = UFMulticastPort_ReadFromBuffer(group_lds, port_lds, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);
     if(result != ERR_UEM_NOERROR || dataLength < sizeof(TURTLEBOT_LDS)){
-        direction = LEFT_;
+        direction = STOP_;
     } else {
         if (found == 1 && lds.front < 350){
             direction = STOP_;
-        } else if (lds.front < 250) {
+        } else if (found == 0) {
             direction = LEFT_;
         }
     }

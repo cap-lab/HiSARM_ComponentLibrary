@@ -51,8 +51,10 @@ TASK_GO
     uem_result result;
     result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&buzzer, sizeof(TURTLEBOT_BUZZER), &dataNum);
     ERRIFGOTO(result, EXIT_);
-    result = UFPort_WriteToBuffer(port_buzzer, (unsigned char *)&buzzer, sizeof(TURTLEBOT_BUZZER), 0, &dataNum);
-    ERRIFGOTO(result, EXIT_);
+    if(buzzer.tone > 0) {
+        result = UFPort_WriteToBuffer(port_buzzer, (unsigned char *)&buzzer, sizeof(TURTLEBOT_BUZZER), 0, &dataNum);
+        ERRIFGOTO(result, EXIT_);
+    }
 EXIT_:
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);

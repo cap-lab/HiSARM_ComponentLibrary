@@ -33,7 +33,8 @@ STATIC int port_led;
 
 STATIC int count;
 STATIC int increase;
-
+STATIC TURTLEBOT_BUZZER buzzer;
+STATIC TURTLEBOT_LED led;
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -51,6 +52,10 @@ TASK_INIT
     // TODO: task initialize code
 	count = 0;
 	increase = 1;
+    buzzer.tone = 0;
+    buzzer.duration = 0;
+    led.left = FALSE;
+    led.right = FALSE;
 }
 
 
@@ -61,8 +66,6 @@ TASK_INIT
 TASK_GO
 {
     // TODO: task main code
-    TURTLEBOT_BUZZER buzzer;
-    TURTLEBOT_LED led;
     int dataLength;
 	uem_result result = ERR_UEM_NOERROR;
 
@@ -72,7 +75,7 @@ TASK_GO
         led.left = TRUE;
         led.right = TRUE;
         increase = 1;
-    } else if(count >= 5) {
+    } else if(count >= 50) {
         buzzer.tone = 500;
         buzzer.duration = 100;
         led.left = FALSE;
@@ -85,6 +88,8 @@ TASK_GO
     ERRIFGOTO(result, EXIT_);
     result = UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), &dataLength);
     ERRIFGOTO(result, EXIT_);
+
+    SEMO_LOG_INFO("buzzer tone: %d, duration: %d", buzzer.tone, buzzer.duration);
 EXIT_:
     if (result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("Communication error(%X)", result);
@@ -100,10 +105,15 @@ EXIT_:
 TASK_WRAPUP
 {
     // TODO: task wrapup code
-    TURTLEBOT_LED led = {FALSE, FALSE};
     int dataLength;
+    buzzer.tone = 0;
+    buzzer.duration = 0;
+    led.left = FALSE;
+    led.right = FALSE;
+    
     UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), &dataLength);
-
+    UFMulticastPort_WriteToBuffer(group_buzzer, port_buzzer, (unsigned char *)&buzzer, sizeof(TURTLEBOT_BUZZER), &dataLength);
+    SEMO_LOG_INFO("finished buzzer tone: %d, duration: %d", buzzer.tone, buzzer.duration);
 }
 
 TASK_CODE_END

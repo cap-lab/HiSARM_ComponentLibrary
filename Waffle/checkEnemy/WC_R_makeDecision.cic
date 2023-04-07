@@ -22,6 +22,7 @@ TASK_CODE_BEGIN
 
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_isEnemy;
+STATIC int port_isFound;
 STATIC int group_motion;
 STATIC int port_motion;
 STATIC int group_lds;
@@ -30,7 +31,6 @@ STATIC int port_lds;
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
 // ##DEFINE_MULTICAST_PORT_SECTION::END
-static int motionCount = 0;
 
 /////////////////////////////////////
 // init code
@@ -40,6 +40,7 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     port_isEnemy = PORT_INITIALIZE(TASK_ID, "isEnemy");
+    port_isFound = PORT_INITIALIZE(TASK_ID, "isFound");
     UFMulticastPort_Initialize(TASK_ID, "motion", &group_motion, &port_motion);
     UFMulticastPort_Initialize(TASK_ID, "lds", &group_lds, &port_lds);
 // ##INIT_PORT_SECTION::END
@@ -47,8 +48,7 @@ TASK_INIT
 // ##INIT_MULTICAST_PORT_SECTION::START
 // ##INIT_MULTICAST_PORT_SECTION::END
 
-    // TODO: task initialize code
-    
+    // TODO: task initialize code   
 }
 
 
@@ -62,33 +62,37 @@ TASK_GO
     int dataLength;
     int motion;
     int findEnemy=0;
+    int detected = 0;
     TURTLEBOT_LDS lds;
     uem_result result;
-
+    result = UFPort_ReadFromBuffer(port_isEnemy, (unsigned char *)&detected, sizeof(int), 0, &dataLength);
+    ERRIFGOTO(result, EXIT_);
     result = UFMulticastPort_ReadFromBuffer(group_motion, port_motion, (unsigned char *)&motion, sizeof(int), &dataLength);    
     ERRIFGOTO(result, EXIT_);
     result = UFMulticastPort_ReadFromBuffer(group_lds, port_lds, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);    
     ERRIFGOTO(result, EXIT_);
 
-    if (motion==0){
-        motionCount++;
-    }else{
-        motionCount = 0;
+    SEMO_LOG_DEBUG("check detected before %d", detected);
+
+    if (motion==0 && lds.front < 800){
+        detected = 1;
     }
 
     //if pir_sensor detect a motion
-    if (motionCount > 1 && lds.front < 1000){
+    if (detected == 1 && lds.front < 800){
         findEnemy=1;
-    }else{
-        findEnemy=0;
     }
-    SEMO_LOG_INFO("motion %d, distance %d, findEnemy %d", motion, lds.front, findEnemy);
-    
+    else {
+        detected = 0;
+        findEnemy = 0;
+    }
+
+    SEMO_LOG_INFO("motion %d, distance %d, detected %d, findEnemy %d", motion, lds.front, detected, findEnemy);
 EXIT_:
     if (result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("Communication error(%x)", result);
     }
-    UFPort_WriteToBuffer(port_isEnemy, (unsigned char *)&findEnemy, sizeof(int), 0, &dataLength);
+    UFPort_WriteToBuffer(port_isFound, (unsigned char *)&findEnemy, sizeof(int), 0, &dataLength);
 }
 
 
