@@ -24,7 +24,7 @@ static float threshold = 0.0;
 
 TASK_CODE_BEGIN
 
-void parameterWrapup()
+static void parameterWrapup()
 {
     count = 0;
     last_shared_robot_num = 0;
@@ -42,7 +42,7 @@ TASK_INIT
     parameterWrapup();
 }
 
-int getSumOfWorkload()
+static int getSumOfWorkload()
 {
     semo_int32 num_of_group_candidate = LIBCALL(group, get_grouping_candidate_num);
     SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
@@ -54,7 +54,7 @@ int getSumOfWorkload()
     return sum;
 }
 
-float getThreshold()
+static float getThreshold()
 {
     semo_int32 num_of_group_candidate = LIBCALL(group, get_grouping_candidate_num);
     SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
@@ -75,7 +75,7 @@ float getThreshold()
     return max_ratio + min_ratio;
 }
 
-void parameterInit(int mode)
+static void parameterInit(int mode)
 {
     count = 0;
     last_shared_robot_num = 0;
@@ -85,7 +85,7 @@ void parameterInit(int mode)
     threshold = getThreshold();
 }
 
-void firstTimeSelectGroup()
+static void firstTimeSelectGroup()
 {
     semo_int32 num_of_group_candidate = LIBCALL(group, get_grouping_candidate_num);
     SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
@@ -94,7 +94,7 @@ void firstTimeSelectGroup()
     LIBCALL(group, set_shared_data_grouping, (semo_uint8*)&data, sizeof(ROBOT_DB));
 }
 
-float getTaskProb(int target_group)
+static float getTaskProb(int target_group)
 {
     int num_assigned_robot = 0;
     SEMO_GROUP group_info;
@@ -112,7 +112,7 @@ float getTaskProb(int target_group)
     return (shared_robot_num * group_info.min)*1.0 / (sum_of_workload * num_assigned_robot);
 }
 
-void selectGroup(int current_mode)
+static void selectGroup(int current_mode)
 {
     ROBOT_DB my_db;
     LIBCALL(group, get_shared_data_grouping, 0, (unsigned char *)&my_db, sizeof(ROBOT_DB));
@@ -158,7 +158,7 @@ void selectGroup(int current_mode)
     }
 }
 
-float getTaskRatio(int target_group)
+static float getTaskRatio(int target_group)
 {
     int num_assigned_robot = 0;
     SEMO_GROUP group_info;
@@ -176,7 +176,7 @@ float getTaskRatio(int target_group)
     return num_assigned_robot * 1.0/ group_info.min;
 }
 
-int stopCheck(int mode)
+static int stopCheck(int mode)
 {
     int result = TRUE;
     std::vector<float> task_ratio_list;
