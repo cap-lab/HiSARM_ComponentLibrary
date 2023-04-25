@@ -21,7 +21,6 @@ static int count_finish_count = 0;
 static int selected_count = 0;
 static int selected_count_finish_count = MAX_SELECTED_COUNT;
 static int last_shared_robot_num = 0;
-static int selected = FALSE;
 static int current_selecting_mode = -1;
 static int sum_of_workload = 0;
 static float threshold = 0.0;
@@ -35,7 +34,6 @@ static void parameterWrapup()
     selected_count = 0;
     selected_count_finish_count = MAX_SELECTED_COUNT;
     last_shared_robot_num = 0;
-    selected = FALSE;
     current_selecting_mode = -1;
     sum_of_workload = 0;
     threshold = 0.0;
@@ -87,7 +85,6 @@ static void parameterInit(int mode)
     count = 0;
     count_finish_count = rand() % 10 + GROUPING_THRESHOLD;
     last_shared_robot_num = 0;
-    selected = FALSE;
     selected_count = 0;
     selected_count_finish_count = MAX_SELECTED_COUNT;
     current_selecting_mode = mode;
@@ -150,6 +147,7 @@ static void selectGroup(int current_mode)
         SEMO_GROUP *selected_group = candidate_group_list + d(gen);
         if (selected_group->id != last_selected_group)
         {
+            my_db.robot_id = THIS_ROBOT_ID;
             my_db.group = selected_group->id;
             my_db.count += 1;
         }
@@ -229,15 +227,16 @@ TASK_GO
         parameterInit(mode);
         firstTimeSelectGroup();
     }
-    else if (current_selecting_mode >= 0 && selected == FALSE)
+    else if (current_selecting_mode >= 0)
     {
+        semo_int8 selected;
         selectGroup(current_selecting_mode);
         selected = stopCheck(current_selecting_mode);
         if (selected == TRUE)
         {
             if (selected_count == 0)
             {
-                selected_count_finish_condition = rand() % MAX_SELECTED_COUNT + 1;
+                selected_count_finish_count = rand() % MAX_SELECTED_COUNT;
             }
             selected_count += 1;
         }
@@ -247,7 +246,7 @@ TASK_GO
         }
     }
 
-    if (selected_count_finish_condition < selected_count || count > count_finish_count)
+    if (selected_count_finish_count < selected_count || count_finish_count < count)
     {
         ROBOT_DB shared_db;
         LIBCALL(group, get_shared_data_grouping, 0, (semo_uint8 *)&shared_db, sizeof(ROBOT_DB));
