@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #define GROUPING_THRESHOLD 30
+#define MAX_SELECTED_COUNT 5
 
 STATIC int port_mode;
 STATIC int port_result;
@@ -16,6 +17,9 @@ typedef struct _ROBOT_DB
 } ROBOT_DB;
 
 static int count = 0;
+static int count_finish_count = 0;
+static int selected_count = 0;
+static int selected_count_finish_count = MAX_SELECTED_COUNT;
 static int last_shared_robot_num = 0;
 static int selected = FALSE;
 static int current_selecting_mode = -1;
@@ -27,6 +31,9 @@ TASK_CODE_BEGIN
 static void parameterWrapup()
 {
     count = 0;
+    count_finish_count = GROUPING_THRESHOLD + 10;
+    selected_count = 0;
+    selected_count_finish_count = MAX_SELECTED_COUNT;
     last_shared_robot_num = 0;
     selected = FALSE;
     current_selecting_mode = -1;
@@ -78,8 +85,11 @@ static float getThreshold()
 static void parameterInit(int mode)
 {
     count = 0;
+    count_finish_count = rand() % 10 + GROUPING_THRESHOLD;
     last_shared_robot_num = 0;
     selected = FALSE;
+    selected_count = 0;
+    selected_count_finish_count = MAX_SELECTED_COUNT;
     current_selecting_mode = mode;
     sum_of_workload = getSumOfWorkload();
     threshold = getThreshold();
@@ -91,7 +101,7 @@ static void firstTimeSelectGroup()
     SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
     SEMO_GROUP *selected_group = &candidate_group_list[rand() % num_of_group_candidate];
     ROBOT_DB data = {THIS_ROBOT_ID, selected_group->id, 0};
-    LIBCALL(group, set_shared_data_grouping, (semo_uint8*)&data, sizeof(ROBOT_DB));
+    LIBCALL(group, set_shared_data_grouping, (semo_uint8 *)&data, sizeof(ROBOT_DB));
 }
 
 static float getTaskProb(int target_group)
@@ -109,7 +119,7 @@ static float getTaskProb(int target_group)
             num_assigned_robot++;
         }
     }
-    return (shared_robot_num * group_info.min)*1.0 / (sum_of_workload * num_assigned_robot);
+    return (shared_robot_num * group_info.min) * 1.0 / (sum_of_workload * num_assigned_robot);
 }
 
 static void selectGroup(int current_mode)
@@ -143,8 +153,8 @@ static void selectGroup(int current_mode)
             my_db.group = selected_group->id;
             my_db.count += 1;
         }
-        LIBCALL(group, set_shared_data_grouping, (unsigned char *)&my_db, sizeof(ROBOT_DB));
     }
+    LIBCALL(group, set_shared_data_grouping, (unsigned char *)&my_db, sizeof(ROBOT_DB));
 
     semo_int32 shared_robot_num = LIBCALL(group, get_shared_robot_num);
     if (last_shared_robot_num < shared_robot_num)
@@ -173,7 +183,7 @@ static float getTaskRatio(int target_group)
             num_assigned_robot++;
         }
     }
-    return num_assigned_robot * 1.0/ group_info.min;
+    return num_assigned_robot * 1.0 / group_info.min;
 }
 
 static int stopCheck(int mode)
@@ -200,10 +210,6 @@ static int stopCheck(int mode)
         if (result == FALSE)
             break;
     }
-    if (result == FALSE && count > GROUPING_THRESHOLD)
-    {
-        result = TRUE;
-    }
     return result;
 }
 
@@ -227,15 +233,27 @@ TASK_GO
     {
         selectGroup(current_selecting_mode);
         selected = stopCheck(current_selecting_mode);
+        if (selected == TRUE)
+        {
+            if (selected_count == 0)
+            {
+                selected_count_finish_condition = rand() % MAX_SELECTED_COUNT + 1;
+            }
+            selected_count += 1;
+        }
+        else
+        {
+            selected_count = 0;
+        }
     }
 
-    if (selected == TRUE)
+    if (selected_count_finish_condition < selected_count || count > count_finish_count)
     {
         ROBOT_DB shared_db;
         LIBCALL(group, get_shared_data_grouping, 0, (semo_uint8 *)&shared_db, sizeof(ROBOT_DB));
-        SEMO_LOG_INFO("Group Selected (Mode %d, Group %d)",current_selecting_mode, shared_db.group);
+        SEMO_LOG_INFO("Group Selected (Mode %d, Group %d)", current_selecting_mode, shared_db.group);
         result = UFPort_WriteToBuffer(port_result, (unsigned char *)&shared_db.group, sizeof(semo_int32), 0, &length);
-        LIBCALL(group, set_grouping_state, current_selecting_mode, SEMO_GROUP_SELECTION_STOP);
+        LIBCALL(group, set_grouping_state, current_selecting_mode, SEMO_GROUP_SELECTION_WRAPUP);
         parameterWrapup();
     }
 _EXIT:
