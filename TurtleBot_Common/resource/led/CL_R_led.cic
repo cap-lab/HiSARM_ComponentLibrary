@@ -8,7 +8,7 @@
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include "turtlebot3_led.h"
+#include "semo_led.h"
 // #include <thread>
 // #include <chrono>
 
@@ -46,12 +46,12 @@ TASK_INIT
 
 TASK_GO
 {
-    TURTLEBOT_LED led;
+    SEMO_LED led;
     int dataNum;
     uem_result result;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&led, sizeof(TURTLEBOT_LED), &dataNum);
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&led, sizeof(SEMO_LED), &dataNum);
     ERRIFGOTO(result, EXIT_);
-    result = UFPort_WriteToBuffer(port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), 0, &dataNum);
+    result = UFPort_WriteToBuffer(port_led, (unsigned char *)&led, sizeof(SEMO_LED), 0, &dataNum);
     ERRIFGOTO(result, EXIT_);
 EXIT_:
     if(result != ERR_UEM_NOERROR) {

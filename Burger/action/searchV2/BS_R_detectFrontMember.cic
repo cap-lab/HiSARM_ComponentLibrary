@@ -11,7 +11,7 @@
 
 //#include <time.h>
 //#include <sys/time.h>
-#include "turtlebot3_camera.h"
+#include "semo_camera.h"
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
 
@@ -56,12 +56,12 @@ TASK_GO
 {
     int dataNum;
     uem_result result;
-    TURTLEBOT_CAMERA image;
-    result = UFMulticastPort_ReadFromBuffer(group_camera, port_camera, (unsigned char *) &image, sizeof(TURTLEBOT_CAMERA), &dataNum);
+    SEMO_CAMERA image;
+    result = UFMulticastPort_ReadFromBuffer(group_camera, port_camera, (unsigned char *) &image, sizeof(SEMO_CAMERA), &dataNum);
 
-    if (dataNum == TURTLEBOT_CAMERA_WIDTH * TURTLEBOT_CAMERA_HEIGHT * TURTLEBOT_CAMERA_CHANNEL && result == ERR_UEM_NOERROR)
+    if (dataNum == SEMO_CAMERA_WIDTH * SEMO_CAMERA_HEIGHT * SEMO_CAMERA_CHANNEL && result == ERR_UEM_NOERROR)
     {
-        cv::Mat frame(TURTLEBOT_CAMERA_HEIGHT, TURTLEBOT_CAMERA_WIDTH, CV_8UC(TURTLEBOT_CAMERA_CHANNEL), image);
+        cv::Mat frame(SEMO_CAMERA_HEIGHT, SEMO_CAMERA_WIDTH, CV_8UC(SEMO_CAMERA_CHANNEL), image);
         number++;
         // image_processing
         cv::Mat processed_image = detectObjectByColor(frame);

@@ -9,24 +9,35 @@
 // include header section
 /////////////////////////////////////
 #include <iostream>
-#include <cstdlib>
-#include <string>
-#include <cctype>
-#include "semo_direction.h"
-// #include <thread>
-// #include <chrono>
+#include <vector>
+#include <algorithm>
+#include <stdio.h>
+#include <chrono>
+#include <thread>
+#include <random>
+#include "Module_engineering_kit.h"
+#include "dynamixel_sdk.h"
+#include "semo_distance.h"
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
 
 TASK_CODE_BEGIN
 
 /////////////////////////////////////
 // global definition
 /////////////////////////////////////
+#define DMS_ADDRESS 421
+#define DMS_MODULE_ADDRESS 392
+#define DMS_MODULE_CONFIG 5
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_direction;
 STATIC int group;
 STATIC int port;
 // ##DEFINE_PORT_SECTION::END
+
+//for random
 
 /////////////////////////////////////
 // init code
@@ -35,13 +46,12 @@ STATIC int port;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "wheel", &group, &port);
-    UFPort_Initialize(TASK_ID, "direction", &port_direction);
+    UFMulticastPort_Initialize(TASK_ID, "distance", &group, &port);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
+    write1ByteTxOnly(port_num, PROTOCOL_VERSION, CM_ID, DMS_MODULE_ADDRESS, DMS_MODULE_CONFIG);
 }
-
 
 /////////////////////////////////////
 // go code
@@ -49,19 +59,18 @@ TASK_INIT
 
 TASK_GO
 {
-    int direction=STOP_;
-    int dataNum;
-    uem_result result;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&direction, sizeof(int), &dataNum);
-    ERRIFGOTO(result, EXIT_);
-    result = UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataNum);
-    ERRIFGOTO(result, EXIT_);
-EXIT_:
+    int dataLength;
+    SEMO_DISTANCE distance;
+    uem_result result = ERR_UEM_NOERROR;
+    distance.front = read2ByteTxRx(port_num, PROTOCOL_VERSION, CM_ID, DMS_ADDRESS);
+    distance.right = 0;
+    distance.back = 0;
+    distance.left = 0;
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&distance, sizeof(SEMO_DISTANCE), &dataLength);
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);
     }
 }
-
 
 /////////////////////////////////////
 // wrapup code
@@ -70,6 +79,7 @@ EXIT_:
 TASK_WRAPUP
 {
     // TODO: task wrapup code
+
 }
 
 TASK_CODE_END

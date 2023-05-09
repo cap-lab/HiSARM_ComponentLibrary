@@ -13,7 +13,7 @@
 #include <sys/time.h>
 
 #include <string>
-#include "turtlebot3_camera.h"
+#include "semo_camera.h"
 
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
@@ -37,24 +37,6 @@ static cv::VideoCapture cap;
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
-
-/*static long long s_llCurTime = 0;
-static long long s_llStartTime = 0;
-
-static long long getCurTickInMicroSeconds()
-{
-    long long tTime = 0;
-    struct timespec stTime;
-    int nRet = 0;
-
-    nRet = clock_gettime(CLOCK_MONOTONIC, &stTime);
-
-    tTime = (((long long) stTime.tv_sec) * 1000000) + (stTime.tv_nsec / 1000);
-
-    return tTime;
-}*/
-
-
 
 TASK_INIT
 {

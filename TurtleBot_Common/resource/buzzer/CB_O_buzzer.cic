@@ -9,7 +9,7 @@
 // include header section
 /////////////////////////////////////
 #include <Arduino.h>
-#include "turtlebot3_buzzer.h"
+#include "semo_buzzer.h"
 
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
@@ -49,10 +49,10 @@ TASK_GO
 {
     // TODO: task main code
     int dataLength;
-    TURTLEBOT_BUZZER buzzer;
+    SEMO_BUZZER buzzer;
 	uem_result result;
 
-    result = UFPort_ReadFromQueue(port_buzzer, (unsigned char *)&buzzer, sizeof(TURTLEBOT_BUZZER), 0, &dataLength);
+    result = UFPort_ReadFromQueue(port_buzzer, (unsigned char *)&buzzer, sizeof(SEMO_BUZZER), 0, &dataLength);
     if(result == ERR_UEM_NOERROR) {
         tone(BDPIN_BUZZER, buzzer.tone, buzzer.duration);
 	} 

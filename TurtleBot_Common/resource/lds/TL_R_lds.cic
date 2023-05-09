@@ -15,6 +15,7 @@
 #include <chrono>
 #include <thread>
 #include <random>
+#include "semo_distance.h"
 #include "turtlebot3_lds.h"
 
 // ##DEFINE_SECTION::START
@@ -117,7 +118,7 @@ static std::vector<int> getAroundDistance(const FrameData &data){
 TASK_GO
 {
     int dataLength;
-    TURTLEBOT_LDS lds;
+    SEMO_DISTANCE lds;
     uem_result result = ERR_UEM_NOERROR;
 
     // TODO: task main code
@@ -128,7 +129,7 @@ TASK_GO
         lds.right = around_distance[1];
         lds.back = around_distance[2];
         lds.left = around_distance[3];
-        result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);
+        result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&lds, sizeof(SEMO_DISTANCE), &dataLength);
     }
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);

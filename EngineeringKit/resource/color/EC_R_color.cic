@@ -8,20 +8,24 @@
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-// ##DEFINE_SECTION::START
-#include "semo_direction.h"
-// ##DEFINE_SECTION::END
+// #include <thread>
+// #include <chrono>
+#include "Module_engineering_kit.h"
+#include "dynamixel_sdk.h"
 
 TASK_CODE_BEGIN
 
 /////////////////////////////////////
 // global definition
 /////////////////////////////////////
-
+#define COLOR_ADDRESS 471
+#define COLOR_MODULE_ADDRESS 394
+#define COLOR_MODULE_CONFIG 13
 // ##DEFINE_PORT_SECTION::START
-STATIC int group_wheel;
-STATIC int port_wheel;
+STATIC int group;
+STATIC int port;
 // ##DEFINE_PORT_SECTION::END
+
 
 /////////////////////////////////////
 // init code
@@ -30,9 +34,11 @@ STATIC int port_wheel;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "wheel", &group_wheel, &port_wheel);
+    UFMulticastPort_Initialize(TASK_ID, "color", &group, &port);
 // ##INIT_PORT_SECTION::END
     
+    // TODO: task initialize code
+    write1ByteTxOnly(port_num, PROTOCOL_VERSION, CM_ID, COLOR_MODULE_ADDRESS, COLOR_MODULE_CONFIG);
 }
 
 
@@ -42,15 +48,18 @@ TASK_INIT
 
 TASK_GO
 {
-    // TODO: task main code
-    int direction = STOP_;
-    int numOfWrite;
+    int color;
+    int dataNum;
     uem_result result;
-    result = UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &numOfWrite);
-    if (result != ERR_UEM_NOERROR){
-        SEMO_LOG_ERROR("Communication error(%X)", result);
+    color = read1ByteTxRx(port_num, PROTOCOL_VERSION, CM_ID, COLOR_ADDRESS);
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&color, sizeof(int), &dataNum);
+    ERRIFGOTO(result, EXIT_);
+EXIT_:
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
     }
 }
+
 
 /////////////////////////////////////
 // wrapup code
@@ -59,7 +68,6 @@ TASK_GO
 TASK_WRAPUP
 {
     // TODO: task wrapup code
-
 }
 
 TASK_CODE_END

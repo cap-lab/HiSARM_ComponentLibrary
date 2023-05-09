@@ -57,14 +57,14 @@
       </libraryPort_list>
       <multicast_port_list>
         <multicast_port id="0" name="color" description="" groupName="color" direction="IN" />
-        <multicast_port id="1" name="lds" description="" groupName="lds" direction="IN" />
+        <multicast_port id="1" name="distance" description="" groupName="distance" direction="IN" />
         <multicast_port id="2" name="wheel" description="" groupName="wheel" direction="OUT" />
       </multicast_port_list>
       <extraSetting_list>
         <extraSetting type="Extra Header" name="semo_leader.h" />
-        <extraSetting type="Extra Header" name="turtlebot3_wheel.h" />
-        <extraSetting type="Extra Header" name="turtlebot3_lds.h" />
-        <extraSetting type="Extra Header" name="turtlebot3_color.h" />
+        <extraSetting type="Extra Header" name="semo_direction.h" />
+        <extraSetting type="Extra Header" name="semo_distance.h" />
+        <extraSetting type="Extra Header" name="semo_color.h" />
       </extraSetting_list>
       <control priority="0" controller="true">
         <control_params />
@@ -111,7 +111,7 @@
         <multicast_port id="0" name="camera" description="" groupName="camera" direction="IN" />
       </multicast_port_list>
       <extraSetting_list>
-        <extraSetting type="Extra Header" name="turtlebot3_camera.h" />
+        <extraSetting type="Extra Header" name="semo_camera.h" />
       </extraSetting_list>
       <control priority="0" controller="true">
         <control_params />
@@ -158,7 +158,7 @@
         <multicast_port id="0" name="led" description="" groupName="led" direction="OUT" />
       </multicast_port_list>
       <extraSetting_list>
-        <extraSetting type="Extra Header" name="turtlebot3_led.h" />
+        <extraSetting type="Extra Header" name="semo_led.h" />
       </extraSetting_list>
       <control priority="0" controller="true">
         <control_params />
@@ -190,7 +190,7 @@
   <taskGroupList />
   <multicast_group_list>
     <multicast_group id="0" name="color" size="4" description="" />
-    <multicast_group id="1" name="lds" size="16" description="" />
+    <multicast_group id="1" name="distance" size="16" description="" />
     <multicast_group id="2" name="wheel" size="4" description="" />
     <multicast_group id="3" name="camera" size="691200" description="" />
     <multicast_group id="4" name="led" size="8" description="" />

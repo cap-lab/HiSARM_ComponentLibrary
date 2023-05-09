@@ -8,11 +8,9 @@
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <iostream>
-#include <cstdlib>
-#include <string>
-#include <cctype>
-#include "semo_direction.h"
+#include "Module_engineering_kit.h"
+#include "dynamixel_sdk.h"
+#include "semo_led.h"
 // #include <thread>
 // #include <chrono>
 
@@ -21,12 +19,18 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 // global definition
 /////////////////////////////////////
+#define DXL_ID_13 13
+#define DXL_ID_14 14
+#define DXL_ID_15 15
+#define DXL_ID_16 16
+#define DXL_ID_BROADCAST 254
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_direction;
+STATIC int port_led;
 STATIC int group;
 STATIC int port;
 // ##DEFINE_PORT_SECTION::END
+
 
 /////////////////////////////////////
 // init code
@@ -35,8 +39,7 @@ STATIC int port;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "wheel", &group, &port);
-    UFPort_Initialize(TASK_ID, "direction", &port_direction);
+    UFMulticastPort_Initialize(TASK_ID, "led", &group, &port);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
@@ -49,13 +52,17 @@ TASK_INIT
 
 TASK_GO
 {
-    int direction=STOP_;
+    SEMO_LED led;
     int dataNum;
     uem_result result;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&direction, sizeof(int), &dataNum);
-    ERRIFGOTO(result, EXIT_);
-    result = UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataNum);
-    ERRIFGOTO(result, EXIT_);
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&led, sizeof(SEMO_LED), &dataNum);
+    for (int i = DXL_ID_13 ; i <= DXL_ID_16 ; i++) {
+        if (i <= DXL_ID_14) {
+            write1ByteTxOnly(port_num, PROTOCOL_VERSION, i, LED_ADDRESS, led.left);
+        } else {
+            write1ByteTxOnly(port_num, PROTOCOL_VERSION, i, LED_ADDRESS, led.right);
+        }
+    }
 EXIT_:
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);

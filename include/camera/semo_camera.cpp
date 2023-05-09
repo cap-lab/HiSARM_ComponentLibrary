@@ -1,4 +1,4 @@
-#include "turtlebot3_camera.h"
+#include "semo_camera.h"
 
 void convertCVMatToArray(unsigned char *dst, cv::Mat &src) {
     for (int i = 0; i < src.rows; ++i) {

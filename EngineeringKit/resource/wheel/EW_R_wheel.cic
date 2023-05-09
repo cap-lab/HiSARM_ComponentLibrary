@@ -12,9 +12,20 @@
 #include <cstdlib>
 #include <string>
 #include <cctype>
+#include "Module_engineering_kit.h"
+#include "dynamixel_sdk.h"
 #include "semo_direction.h"
-// #include <thread>
-// #include <chrono>
+
+#define DXL_ID_13 13
+#define DXL_ID_14 14
+#define DXL_ID_15 15
+#define DXL_ID_16 16
+#define DXL_ID_BROADCAST 254
+#define VELOCITY_ADDRESS 104
+#define MAX_LINEAR_VELOCITY 256
+#define MIN_LINEAR_VELOCITY              -MAX_LINEAR_VELOCITY  
+#define INITIAL_LINEAR_X (MAX_LINEAR_VELOCITY/3)
+
 
 TASK_CODE_BEGIN
 
@@ -23,7 +34,6 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_direction;
 STATIC int group;
 STATIC int port;
 // ##DEFINE_PORT_SECTION::END
@@ -36,7 +46,6 @@ TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
     UFMulticastPort_Initialize(TASK_ID, "wheel", &group, &port);
-    UFPort_Initialize(TASK_ID, "direction", &port_direction);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
@@ -47,6 +56,16 @@ TASK_INIT
 // go code
 /////////////////////////////////////
 
+void setVelocity(int left_velocity, int right_velocity) {
+    for (int i = DXL_ID_13 ; i <= DXL_ID_16 ; i++) {
+        if (i <= DXL_ID_14) {
+            write4ByteTxOnly(port_num, PROTOCOL_VERSION, i, VELOCITY_ADDRESS, left_velocity);
+        } else {
+            write4ByteTxOnly(port_num, PROTOCOL_VERSION, i, VELOCITY_ADDRESS, right_velocity);
+        }
+    }
+}
+
 TASK_GO
 {
     int direction=STOP_;
@@ -54,8 +73,26 @@ TASK_GO
     uem_result result;
     result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&direction, sizeof(int), &dataNum);
     ERRIFGOTO(result, EXIT_);
-    result = UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataNum);
-    ERRIFGOTO(result, EXIT_);
+    switch(direction) {
+        case STOP_:
+            setVelocity(0, 0);
+            break;
+        case FORWARD_:
+            setVelocity(-INITIAL_LINEAR_X, INITIAL_LINEAR_X);
+            break;
+        case BACKWARD_:
+            setVelocity(INITIAL_LINEAR_X, -INITIAL_LINEAR_X);
+            break;
+        case RIGHT_:
+            setVelocity(INITIAL_LINEAR_X, INITIAL_LINEAR_X);
+            break;
+        case LEFT_:
+            setVelocity(-INITIAL_LINEAR_X, -INITIAL_LINEAR_X);
+            break;
+        default:
+            SEMO_LOG_ERROR("Wheel Control : direction(%d) is not correct.", direction);
+            break;
+    }
 EXIT_:
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);

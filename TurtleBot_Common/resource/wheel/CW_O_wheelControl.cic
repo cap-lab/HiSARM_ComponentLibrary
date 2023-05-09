@@ -11,7 +11,7 @@
 #include <inttypes.h>
 #include <DynamixelSDK.h>
 #include <string>
-#include "turtlebot3_wheel.h"
+#include "semo_direction.h"
 
 // ##DEFINE_SECTION::START
 

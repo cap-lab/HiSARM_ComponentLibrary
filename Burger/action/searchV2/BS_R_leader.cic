@@ -58,7 +58,7 @@ TASK_GO
     int dataLength;
     int leader = 0;
 	uem_result result;
-    TURTLEBOT_LED led = {FALSE, FALSE};
+    SEMO_LED led = {FALSE, FALSE};
     UFPort_ReadFromQueue(port_leader, (unsigned char *)&leader, sizeof(int), 0, &dataLength);
     if (leader == 1) {
         if (count <= 0) {
@@ -74,7 +74,7 @@ TASK_GO
     } else {
         count = 0;
     } 
-    result = UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), &dataLength);
+    result = UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(SEMO_LED), &dataLength);
     if (result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("Communication error(%X)", result);
     }
@@ -90,8 +90,8 @@ TASK_WRAPUP
 {
     // TODO: task wrapup code
     int dataLength;
-    TURTLEBOT_LED led = {FALSE, FALSE};
-    UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), &dataLength);
+    SEMO_LED led = {FALSE, FALSE};
+    UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(SEMO_LED), &dataLength);
 }
 
 TASK_CODE_END

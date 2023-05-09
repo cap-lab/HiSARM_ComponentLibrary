@@ -8,7 +8,7 @@
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include "turtlebot3_wheel.h"
+#include "semo_direction.h"
 #include <iostream>
 #include <cstdlib>
 #include <string>

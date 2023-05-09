@@ -12,8 +12,8 @@
 #include <vector>
 #include <algorithm>
 #include <stdio.h>
-#include "turtlebot3_wheel.h"
-#include "turtlebot3_lds.h"
+#include "semo_direction.h"
+#include "semo_distance.h"
 
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
@@ -28,8 +28,8 @@ TASK_CODE_BEGIN
 // ##DEFINE_PORT_SECTION::START
 STATIC int port_direction;
 STATIC int port_found;
-STATIC int group_lds;
-STATIC int port_lds;
+STATIC int group_distance;
+STATIC int port_distance;
 STATIC int group_wheel;
 STATIC int port_wheel;
 // ##DEFINE_PORT_SECTION::END
@@ -44,7 +44,7 @@ TASK_INIT
 // ##INIT_PORT_SECTION::START
     port_direction = PORT_INITIALIZE(TASK_ID, "direction");
     port_found = PORT_INITIALIZE(TASK_ID, "found");
-    UFMulticastPort_Initialize(TASK_ID, "lds", &group_lds, &port_lds);
+    UFMulticastPort_Initialize(TASK_ID, "distance", &group_distance, &port_distance);
     UFMulticastPort_Initialize(TASK_ID, "wheel", &group_wheel, &port_wheel);
 // ##INIT_PORT_SECTION::END
     
@@ -60,22 +60,22 @@ TASK_GO
 {
     int dataLength;
     int found = 0;
-    TURTLEBOT_LDS lds;
+    SMEO_DISTANCE distance;
     uem_result result;
     int direction = STOP_;
     UFPort_ReadFromQueue(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataLength);
     UFPort_ReadFromQueue(port_found, (unsigned char *)&found, sizeof(int), 0, &dataLength);
-    result = UFMulticastPort_ReadFromBuffer(group_lds, port_lds, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);
-    if(result != ERR_UEM_NOERROR || dataLength < sizeof(TURTLEBOT_LDS)){
+    result = UFMulticastPort_ReadFromBuffer(group_distance, port_distance, (unsigned char *)&distance, sizeof(SEMO_DISTANCE), &dataLength);
+    if(result != ERR_UEM_NOERROR || dataLength < sizeof(SEMO_DISTANCE)){
         direction = STOP_;
     } else {
-        if (found == 1 && lds.front < 350){
+        if (found == 1 && distance.front < 350){
             direction = STOP_;
         } else if (found == 0) {
             direction = LEFT_;
         }
     }
-    SEMO_LOG_INFO("found %d, distance %d, direction %d", found, lds.front, direction);
+    SEMO_LOG_INFO("found %d, distance %d, direction %d", found, distance.front, direction);
 
     result = UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
     if(result != ERR_UEM_NOERROR) {

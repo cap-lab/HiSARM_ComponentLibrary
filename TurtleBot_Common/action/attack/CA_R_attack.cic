@@ -33,8 +33,8 @@ STATIC int port_led;
 
 STATIC int count;
 STATIC int increase;
-STATIC TURTLEBOT_BUZZER buzzer;
-STATIC TURTLEBOT_LED led;
+STATIC SEMO_BUZZER buzzer;
+STATIC SEMO_LED led;
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -84,9 +84,9 @@ TASK_GO
     }
     count += increase;
 
-    result = UFMulticastPort_WriteToBuffer(group_buzzer, port_buzzer, (unsigned char *)&buzzer, sizeof(TURTLEBOT_BUZZER), &dataLength);
+    result = UFMulticastPort_WriteToBuffer(group_buzzer, port_buzzer, (unsigned char *)&buzzer, sizeof(SEMO_BUZZER), &dataLength);
     ERRIFGOTO(result, EXIT_);
-    result = UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(TURTLEBOT_LED), &dataLength);
+    result = UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(SEMO_LED), &dataLength);
     ERRIFGOTO(result, EXIT_);
 
     SEMO_LOG_INFO("buzzer tone: %d, duration: %d", buzzer.tone, buzzer.duration);

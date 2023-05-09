@@ -1,8 +1,0 @@
-#ifndef __TURTLEBOT3_COLOR_HEADER__
-#define __TURTLEBOT3_COLOR_HEADER__
-enum TURTLEBOT_COLOR{
-    BLACK = 2,
-    RED,
-    YELLOW
-};
-#endif
