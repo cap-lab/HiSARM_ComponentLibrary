@@ -10,7 +10,6 @@
 /////////////////////////////////////
 // #include <thread>
 // #include <chrono>
-#include "Module_engineering_kit.h"
 #include "dynamixel_sdk.h"
 
 TASK_CODE_BEGIN
@@ -19,8 +18,8 @@ TASK_CODE_BEGIN
 // global definition
 /////////////////////////////////////
 #define COLOR_ADDRESS 471
-#define COLOR_MODULE_ADDRESS 394
-#define COLOR_MODULE_CONFIG 13
+#define COLOR_MODULE_ADDRESS ((uint16_t)394)
+#define COLOR_MODULE_CONFIG ((uint8_t)13)
 // ##DEFINE_PORT_SECTION::START
 STATIC int group;
 STATIC int port;

@@ -8,14 +8,7 @@
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <iostream>
-#include <vector>
-#include <algorithm>
 #include <stdio.h>
-#include <chrono>
-#include <thread>
-#include <random>
-#include "Module_engineering_kit.h"
 #include "dynamixel_sdk.h"
 #include "semo_distance.h"
 
@@ -29,9 +22,8 @@ TASK_CODE_BEGIN
 // global definition
 /////////////////////////////////////
 #define DMS_ADDRESS 421
-#define DMS_MODULE_ADDRESS 392
-#define DMS_MODULE_CONFIG 5
-
+#define DMS_MODULE_ADDRESS ((uint16_t)392)
+#define DMS_MODULE_CONFIG ((uint8_t)5)
 // ##DEFINE_PORT_SECTION::START
 STATIC int group;
 STATIC int port;
@@ -62,7 +54,8 @@ TASK_GO
     int dataLength;
     SEMO_DISTANCE distance;
     uem_result result = ERR_UEM_NOERROR;
-    distance.front = read2ByteTxRx(port_num, PROTOCOL_VERSION, CM_ID, DMS_ADDRESS);
+    int front = 1023 - read2ByteTxRx(port_num, PROTOCOL_VERSION, CM_ID, DMS_ADDRESS);
+    distance.front = front/700+100;
     distance.right = 0;
     distance.back = 0;
     distance.left = 0;

@@ -26,7 +26,7 @@ STATIC int port_isFrontMember;
 STATIC int group_camera;
 STATIC int port_camera;
 
-cv::Mat detectObjectByColor(const cv::Mat &frame);
+static cv::Mat detectObjectByColor(const cv::Mat &frame);
 
 static int isFrontMember;
 /////////////////////////////////////
@@ -99,7 +99,7 @@ TASK_GO
 
 }
 
-cv::Mat detectObjectByColor(const cv::Mat &frame)
+static cv::Mat detectObjectByColor(const cv::Mat &frame)
 {
     cv::Mat imageHSV;
     // convert the capture fram from BGR TO HSV
