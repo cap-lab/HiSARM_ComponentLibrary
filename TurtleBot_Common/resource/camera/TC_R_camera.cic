@@ -13,7 +13,7 @@
 #include <sys/time.h>
 
 #include <string>
-#include "turtlebot3_camera.h"
+#include "semo_camera.h"
 
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
