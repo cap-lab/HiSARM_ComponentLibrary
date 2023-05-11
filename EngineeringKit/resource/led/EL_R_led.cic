@@ -18,19 +18,14 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 // global definition
 /////////////////////////////////////
-#define DXL_ID_13 13
-#define DXL_ID_14 14
-#define DXL_ID_15 15
-#define DXL_ID_16 16
-#define DXL_ID_BROADCAST 254
 #define LED_ADDRESS ((uint16_t)65)
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_led;
+STATIC SEMO_LED previous_led = {SEMO_LED_OFF, SEMO_LED_OFF};
 STATIC int group;
 STATIC int port;
 // ##DEFINE_PORT_SECTION::END
 
-
+static void setLed(int left, int right);
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -42,6 +37,8 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
+    setLed(SEMO_LED_OFF, SEMO_LED_OFF);
+    
 }
 
 
@@ -49,17 +46,33 @@ TASK_INIT
 // go code
 /////////////////////////////////////
 
+static void setLed(int left, int right) {
+    SEMO_LOG_DEBUG("led address %d led l %d r %d", LED_ADDRESS, left, right);
+    for (uint8_t i = DXL_ID_13 ; i <= DXL_ID_16 ; i++) {
+        if (i <= DXL_ID_14) {
+            if (left == SEMO_LED_ON || left == SEMO_LED_OFF) {
+                SEMO_write1ByteTxRx(i, LED_ADDRESS, left);
+            }
+        } else {
+            if (right == SEMO_LED_ON || right == SEMO_LED_OFF) {
+                SEMO_write1ByteTxRx(i, LED_ADDRESS, right);
+            }
+        }
+    }
+}
+
 TASK_GO
 {
     SEMO_LED led;
     int dataNum;
     uem_result result;
     result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&led, sizeof(SEMO_LED), &dataNum);
-    for (uint8_t i = DXL_ID_13 ; i <= DXL_ID_16 ; i++) {
-        if (i <= DXL_ID_14) {
-            write1ByteTxOnly(port_num, PROTOCOL_VERSION, i, LED_ADDRESS, led.left);
-        } else {
-            write1ByteTxOnly(port_num, PROTOCOL_VERSION, i, LED_ADDRESS, led.right);
+    if (previous_led.left != led.left || previous_led.right != led.right) {
+        if ((led.left == SEMO_LED_ON || led.left == SEMO_LED_OFF) &&
+            (led.right == SEMO_LED_ON || led.right == SEMO_LED_OFF)) {
+            setLed(led.left, led.right);
+            previous_led.left = led.left;
+            previous_led.right = led.right;
         }
     }
 EXIT_:
@@ -76,6 +89,7 @@ EXIT_:
 TASK_WRAPUP
 {
     // TODO: task wrapup code
+    setLed(SEMO_LED_OFF, SEMO_LED_OFF);
 }
 
 TASK_CODE_END

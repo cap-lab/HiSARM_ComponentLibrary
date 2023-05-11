@@ -70,7 +70,7 @@ void init_lds(){
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "lds", &group, &port);
+    UFMulticastPort_Initialize(TASK_ID, "distance", &group, &port);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code

@@ -1,8 +1,12 @@
 #ifndef __SEMO_COLOR_HEADER__
 #define __SEMO_COLOR_HEADER__
 enum SEMO_COLOR{
-    BLACK = 2,
-    RED,
-    YELLOW
+    SEMO_RED =1 ,
+    SEMO_GREEN,
+    SEMO_BLUE,
+    SEMO_YELLOW,
+    SEMO_ORANGE,
+    SEMO_BLACK,
+    SEMO_WHITE
 };
 #endif

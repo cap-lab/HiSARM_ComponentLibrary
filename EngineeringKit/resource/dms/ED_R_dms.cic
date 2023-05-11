@@ -9,6 +9,7 @@
 // include header section
 /////////////////////////////////////
 #include <stdio.h>
+#include <math.h>
 #include "dynamixel_sdk.h"
 #include "semo_distance.h"
 
@@ -42,23 +43,34 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    write1ByteTxOnly(port_num, PROTOCOL_VERSION, CM_ID, DMS_MODULE_ADDRESS, DMS_MODULE_CONFIG);
+    SEMO_write1ByteTxRx(CM_ID, DMS_MODULE_ADDRESS, DMS_MODULE_CONFIG);
 }
 
 /////////////////////////////////////
 // go code
 /////////////////////////////////////
 
+double converter(double x) {
+    double a = 84.97295429;
+    double b = 0.99536706;
+    double c = 0;
+
+    return a * pow(b, x) + c;
+}
+
 TASK_GO
 {
     int dataLength;
     SEMO_DISTANCE distance;
+    int front;
+    uint16_t value;
     uem_result result = ERR_UEM_NOERROR;
-    int front = 1023 - read2ByteTxRx(port_num, PROTOCOL_VERSION, CM_ID, DMS_ADDRESS);
-    distance.front = front/700+100;
+    SEMO_read2ByteTxRx(CM_ID, DMS_ADDRESS, &value);
+    distance.front = (int)converter((double)value)*10;
     distance.right = 0;
     distance.back = 0;
     distance.left = 0;
+    SEMO_LOG_DEBUG("cmid %d, dms address %d, distance %d",CM_ID, DMS_ADDRESS, distance.front);
     result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&distance, sizeof(SEMO_DISTANCE), &dataLength);
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);
