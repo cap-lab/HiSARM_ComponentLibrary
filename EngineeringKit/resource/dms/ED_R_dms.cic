@@ -22,9 +22,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 // global definition
 /////////////////////////////////////
-#define DMS_ADDRESS 421
-#define DMS_MODULE_ADDRESS ((uint16_t)392)
-#define DMS_MODULE_CONFIG ((uint8_t)5)
+#define DMS_LEFT_ADDRESS            419
+#define DMS_MODULE_LEFT_ADDRESS     390
+#define DMS_RIGHT_ADDRESS           421
+#define DMS_MODULE_RIGHT_ADDRESS    392
+#define DMS_MODULE_CONFIG           5
 // ##DEFINE_PORT_SECTION::START
 STATIC int group;
 STATIC int port;
@@ -43,14 +45,15 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    SEMO_write1ByteTxRx(CM_ID, DMS_MODULE_ADDRESS, DMS_MODULE_CONFIG);
+    SEMO_write1ByteTxRx(CM_ID, DMS_MODULE_LEFT_ADDRESS, DMS_MODULE_CONFIG);
+    SEMO_write1ByteTxRx(CM_ID, DMS_MODULE_RIGHT_ADDRESS, DMS_MODULE_CONFIG);
 }
 
 /////////////////////////////////////
 // go code
 /////////////////////////////////////
 
-double converter(double x) {
+static double converter(double x) {
     double a = 84.97295429;
     double b = 0.99536706;
     double c = 0;
@@ -62,11 +65,16 @@ TASK_GO
 {
     int dataLength;
     SEMO_DISTANCE distance;
-    int front;
-    uint16_t value;
+    int left;
+    int right;
+    uint16_t value_left;
+    uint16_t value_right;
     uem_result result = ERR_UEM_NOERROR;
-    SEMO_read2ByteTxRx(CM_ID, DMS_ADDRESS, &value);
-    distance.front = (int)converter((double)value)*10;
+    SEMO_read2ByteTxRx(CM_ID, DMS_LEFT_ADDRESS, &value_left);
+    SEMO_read2ByteTxRx(CM_ID, DMS_RIGHT_ADDRESS, &value_right);
+    left =  (int)converter((double)value_left)*10;
+    right =  (int)converter((double)value_right)*10;
+    distance.front = left < right ? left : right;
     distance.right = 0;
     distance.back = 0;
     distance.left = 0;

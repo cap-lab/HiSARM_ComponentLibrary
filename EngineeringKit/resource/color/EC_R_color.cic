@@ -54,7 +54,7 @@ TASK_INIT
 // go code
 /////////////////////////////////////
 
-int colorConverter(int before) {
+static int colorConverter(int before) {
     switch(before) {
         case EK_BLACK:
             return SEMO_BLACK;

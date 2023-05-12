@@ -90,13 +90,13 @@ TASK_GO
             break;
         case RIGHT_:
             if (previous_direction != RIGHT_) {
-                setVelocity(INITIAL_LINEAR_X/7*1.43, INITIAL_LINEAR_X/7*1.43);
+                setVelocity((INITIAL_LINEAR_X/7)*1.43*4, (INITIAL_LINEAR_X/7)*1.43*4);
                 previous_direction = direction;
             }
             break;
         case LEFT_:
             if (previous_direction != LEFT_) {
-                setVelocity(-INITIAL_LINEAR_X/7*1.43, -INITIAL_LINEAR_X/7*1.43);
+                setVelocity((-INITIAL_LINEAR_X/7)*1.43*4, (-INITIAL_LINEAR_X/7)*1.43*4);
                 previous_direction = direction;
             }
             break;

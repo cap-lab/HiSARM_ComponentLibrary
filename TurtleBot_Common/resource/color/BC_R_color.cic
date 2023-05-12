@@ -42,6 +42,14 @@ TASK_INIT
 /////////////////////////////////////
 // go code
 /////////////////////////////////////
+static int convertColor(int before) {
+    switch(before) {
+        case 6:
+            return SEMO_YELLOW;
+        default:
+            return before;
+    }
+}
 
 TASK_GO
 {
@@ -50,6 +58,8 @@ TASK_GO
     uem_result result;
     result = UFPort_ReadFromQueue(port_color, (unsigned char *)&color, sizeof(int), 0, &dataNum);
     ERRIFGOTO(result, EXIT_);
+    color = convertColor(color);
+    SEMO_LOG_DEBUG("color %d", before);
     result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&color, sizeof(int), &dataNum);
     ERRIFGOTO(result, EXIT_);
 EXIT_:
