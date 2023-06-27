@@ -1,0 +1,48 @@
+#include <iostream>
+#include <unistd.h>
+
+STATIC int port_mode;
+STATIC int port_result;
+
+TASK_CODE_BEGIN
+
+TASK_INIT
+{
+    SEMO_LOG_INFO("INIT");
+    UFPort_Initialize(THIS_TASK_ID, "mode", &port_mode);
+    UFPort_Initialize(THIS_TASK_ID, "result", &port_result);
+}
+
+TASK_GO
+{
+    semo_int32 mode;
+    int length = 0;
+    uem_result result;
+    result = UFPort_GetNumOfAvailableData(port_mode, 0, &length);
+    ERRIFGOTO(result, _EXIT);
+    if (length > 0)
+    {
+        result = UFPort_ReadFromQueue(port_mode, (unsigned char *)&mode, sizeof(mode), 0, &length);
+        ERRIFGOTO(result, _EXIT);
+        LIBCALL(group, set_grouping_state, mode, SEMO_GROUP_SELECTION_INITIALIZE);
+        SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
+        LIBCALL(group, set_grouping_state, mode, SEMO_GROUP_SELECTION_STOP);
+        result = UFPort_WriteToBuffer(port_result, (unsigned char *)&candidate_group_list[0].id, sizeof(semo_int32), 0, &length);
+        ERRIFGOTO(result, _EXIT);
+    }
+_EXIT:
+    if (result != ERR_UEM_NOERROR)
+    {
+        SEMO_LOG_ERROR("Error Code (%X)", result);
+    }
+    return;
+}
+
+TASK_WRAPUP
+{
+    SEMO_LOG_INFO("WRAP UP");
+}
+
+TASK_CODE_END
+
+#undef GROUPING_THRESHOLD
