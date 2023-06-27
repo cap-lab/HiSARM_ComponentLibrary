@@ -1,0 +1,192 @@
+/************************************
+ *
+ * File : R_controlAndReport.cic
+ * Date : Nov 17, 2022 10:38 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <string>
+#include "semo_direction.h"
+#include "semo_color.h"
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_target1;
+STATIC int port_target2;
+STATIC int port_area;
+STATIC int port_group;
+STATIC int port_isFrontMember;
+STATIC int port_isFound;
+STATIC int port_isLeader;
+STATIC int group_color;
+STATIC int port_color;
+STATIC int group_wheel;
+STATIC int port_wheel;
+STATIC int group_distance;
+STATIC int port_distance;
+// ##DEFINE_PORT_SECTION::END
+
+// ##DEFINE_MULTICAST_PORT_SECTION::START
+// ##DEFINE_MULTICAST_PORT_SECTION::END
+
+static int distance = 8000;
+static int isFound = 0;
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    // action input
+    port_target1 = PORT_INITIALIZE(TASK_ID, "target1");
+    port_target2 = PORT_INITIALIZE(TASK_ID, "target2");
+    port_area = PORT_INITIALIZE(TASK_ID, "area");
+    port_group = PORT_INITIALIZE(TASK_ID, "group");
+    port_isFrontMember = PORT_INITIALIZE(TASK_ID, "isFrontMember");
+    // action output
+    port_isLeader = PORT_INITIALIZE(TASK_ID, "isLeader");
+    port_isFound = PORT_INITIALIZE(TASK_ID, "isFound");
+    // resource
+    UFMulticastPort_Initialize(TASK_ID, "color", &group_color, &port_color);
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &group_wheel, &port_wheel);
+    UFMulticastPort_Initialize(TASK_ID, "distance", &group_distance, &port_distance);
+// ##INIT_PORT_SECTION::END
+
+// ##INIT_MULTICAST_PORT_SECTION::START
+// ##INIT_MULTICAST_PORT_SECTION::END
+
+    // TODO: task initialize code
+    isFound = 0;
+}
+
+static int count=0;
+static  int receivedSharedValue[2] = {0, };
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    // TODO: task main code
+    int dataLength;
+    int color = 0;
+    int direction = STOP_;
+    int target[2] = {0, };
+    int area = 0;
+    int group = 0;
+    int isLeader = 0;
+    int isFrontMember = 1;
+    int searchedTarget = 0;
+    SEMO_DISTANCE distance;
+
+    UFPort_ReadFromQueue(port_isFrontMember, (unsigned char *)&isFrontMember, sizeof(int), 0 , &dataLength); 
+    UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
+    UFPort_ReadFromBuffer(port_target1, (unsigned char *)&target[0], sizeof(int), 0 , &dataLength);
+    UFPort_ReadFromBuffer(port_target2, (unsigned char *)&target[1], sizeof(int), 0 , &dataLength);
+    UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0 , &dataLength);
+    UFMulticastPort_ReadFromBuffer(group_color, port_color, (unsigned char *)&color, sizeof(int), &dataLength);
+    UFMulticastPort_ReadFromBuffer(group_distance, port_distance, (unsigned char *)&distance, sizeof(SEMO_DISTANCE), &dataLength);
+
+    if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED) {
+        isLeader = LIBCALL(leader, get_leader, group);
+        if (isLeader == THIS_ROBOT_ID){
+            isLeader = 1;
+            // SEMO_LOG_INFO("I'm leader (%d) of group: %d", THIS_ROBOT_ID, group);
+        } else {
+            isLeader = 0;
+            // SEMO_LOG_INFO("I'm not leader (%d) of group: %d", THIS_ROBOT_ID, group);
+        }
+    }
+    
+    if (isFound == 0){
+        std::string robotName = THIS_ROBOT_NAME;
+        if(robotName.compare("Burger_1") == 0){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
+            target[0] += 2;
+            target[1] += 2;
+        }
+
+        if (color == target[0] || color == target[1]){
+            if (color == searchedTarget) {
+                count++;
+            }
+            else {
+                count = 1;
+            }
+            searchedTarget = color;
+        }else {
+            count=0;
+        }
+
+        if (count > 2){ // to avoid error of fault sensor value, three continuous values must be detected to stop the search operation.
+            if (LIBCALL(searchedColor, avail_searchedColor_action)){
+                LIBCALL(searchedColor, get_searchedColor_action, &receivedSharedValue);
+            }
+            if(searchedTarget == target[0]) {
+                receivedSharedValue[0] = 1;
+            }else {
+                receivedSharedValue[1] = 1;
+            }
+            LIBCALL(searchedColor, set_searchedColor_action, &receivedSharedValue);
+
+            if (receivedSharedValue[0] == 1 && receivedSharedValue[1] == 1) {
+                isFound=1;
+                SEMO_LOG_INFO("all colors found");
+                direction = STOP_;
+            }
+
+        }else{  // if the distance is too close to obstacles or too far from the obstacles, the robot turns left to change the direction 
+            if(distance.front < 350 || distance.front > 2000){ 
+                if (isFrontMember == 1){
+                    direction = STOP_;
+                }else{
+                    if (area % 2 == 0){
+                        direction = LEFT_;
+                    }else{
+                        direction = RIGHT_;
+                    }
+                }
+            }else{
+                direction = FORWARD_;
+            }
+        }
+    }
+    
+    SEMO_LOG_WARN("group: %d, color: %d, count: %d, target1: %d, target2: %d, direction: %d, distance: %d, isFrontMember: %d, shared: %d,%d\n", group, color, count, target[0], target[1], direction, distance.front, isFrontMember, receivedSharedValue[0], receivedSharedValue[1]);
+    UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
+    if(isFound == 1) {
+        UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);
+    }
+    UFPort_WriteToQueue(port_isLeader, (unsigned char *)&isLeader, sizeof(int), 0 , &dataLength);
+}
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+    int dataLength;
+    int direction = STOP_;
+
+    receivedSharedValue[0] = 0;
+    receivedSharedValue[1] = 0;
+    UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
+}
+
+TASK_CODE_END

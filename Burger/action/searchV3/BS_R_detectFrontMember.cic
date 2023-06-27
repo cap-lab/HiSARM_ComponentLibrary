@@ -1,0 +1,133 @@
+/************************************
+ *
+ * File : R_detectFrontMember.cic
+ * Date : Mar 14, 2023, 1:38 PM
+ *
+ *************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+
+//#include <time.h>
+//#include <sys/time.h>
+#include "semo_camera.h"
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int port_isFrontMember;
+STATIC int group_camera;
+STATIC int port_camera;
+
+static cv::Mat detectObjectByColor(const cv::Mat &frame);
+
+static int isFrontMember;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+static int number = 0;
+
+TASK_INIT
+{
+    // ##INIT_PORT_SECTION::START
+    port_isFrontMember = PORT_INITIALIZE(TASK_ID, "isFrontMember");
+    UFMulticastPort_Initialize(TASK_ID, "camera", &group_camera, &port_camera);
+    // ##INIT_PORT_SECTION::END
+
+    // TODO: task initialize code
+    isFrontMember = 1;
+
+    number = 0;
+}
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int dataNum;
+    uem_result result;
+    SEMO_CAMERA image;
+    result = UFMulticastPort_ReadFromBuffer(group_camera, port_camera, (unsigned char *) &image, sizeof(SEMO_CAMERA), &dataNum);
+
+    if (dataNum == SEMO_CAMERA_WIDTH * SEMO_CAMERA_HEIGHT * SEMO_CAMERA_CHANNEL && result == ERR_UEM_NOERROR)
+    {
+        cv::Mat frame(SEMO_CAMERA_HEIGHT, SEMO_CAMERA_WIDTH, CV_8UC(SEMO_CAMERA_CHANNEL), image);
+        number++;
+        // image_processing
+        cv::Mat processed_image = detectObjectByColor(frame);
+
+        // Calculate the moments of the threshold image
+        cv::Moments theMoments = cv::moments(processed_image);
+
+        // double dM01 = theMoments.m01;
+        double dM10 = theMoments.m10;
+        double dArea = theMoments.m00;
+
+        // if the area <= 10000, lets consider that there are no objects in the image because of the noise
+        if (dArea > 5000000)
+        {
+            // calculate the position of the ball
+            int center_x = dM10 / dArea;
+
+            int width = frame.size().width;
+            if (center_x > (width / 3) || center_x < (width * 2 / 3))
+            {
+                isFrontMember = 1;
+                SEMO_LOG_INFO("Front member detected");
+            } else {
+                isFrontMember = 0;
+                SEMO_LOG_INFO("No Front member");
+            }
+        }else {
+            isFrontMember = 0;
+            SEMO_LOG_INFO("No Front member_");
+        }
+
+    }
+
+    UFPort_WriteToQueue(port_isFrontMember, (unsigned char *)&isFrontMember, sizeof(int), 0, &dataNum);
+
+}
+
+static cv::Mat detectObjectByColor(const cv::Mat &frame)
+{
+    cv::Mat imageHSV;
+    // convert the capture fram from BGR TO HSV
+    cv::cvtColor(frame, imageHSV, cv::COLOR_BGR2HSV);
+
+    // threshold the image
+    cv::Mat imageThresholded;
+    // cv::inRange(imageHSV, cv::Scalar(lowValueHue,lowValueSat,lowValueVal), cv::Scalar(highValueHue,hig    hValueSat,highValueVal), imageThresholded);
+    cv::inRange(imageHSV, cv::Scalar(0, 0, 0), cv::Scalar(200, 255, 65), imageThresholded);
+
+    // morphologoical opening(remove small objects from the foreground)
+    cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+    cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+
+    // morphological closing fill in small holes of the foreground)
+    cv::dilate(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+    cv::erode(imageThresholded, imageThresholded, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+
+    return imageThresholded;
+}
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END
