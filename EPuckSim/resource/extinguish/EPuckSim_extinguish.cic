@@ -1,0 +1,80 @@
+/************************************
+ *
+ * File : EPucSim_wheel.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <string>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+static int before;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "extinguish", &group, &port);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    before = -1;
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static void extinguish(int target) {
+    long long int fireHandle = LIBCALL(simulation, get_object, "/fire_" + std::to_string(target), std::nullopt); 
+    auto fire = LIBCALL(simulation, get_objects_in_tree, fireHandle);
+    LIBCALL(simulation, set_remove_objects, fire);
+    SEMO_LOG_INFO("extinguish fire_%d %lld", target, fireHandle);
+}
+
+TASK_GO
+{
+    int remove = -1;
+    int dataNum;
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&remove, sizeof(int), &dataNum);
+    ERRIFGOTO(result, EXIT_);
+    if(remove != -1 && remove != before && dataNum > 0) {
+        extinguish(remove);
+        before = remove;
+    }
+
+EXIT_:
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END
+

@@ -1,0 +1,110 @@
+/************************************
+ *
+ * File : EPucSim_wheel.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <string>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+typedef struct _EPUCK_LED {
+    int power;
+    double red;
+    double green;
+    double blue;
+} EPUCK_LED;
+static EPUCK_LED before = {0, 0, 0, 0};
+static long long int ledLightHandler;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "led", &group, &port);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    ledLightHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/ledLight", std::nullopt); 
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static int isSame(EPUCK_LED *before, EPUCK_LED *current) {
+    int ret = 1;
+    if (before->power != current->power) {
+        ret = 0;
+    }
+    if (before->red != current->red && current->red >= 0) {
+        ret = 0;
+    }
+    if (before->green != current->green && current->green >= 0) {
+        ret = 0;
+    }
+    if (before->blue != current->blue && current->blue >= 0) {
+        ret = 0;
+    }
+
+    return ret;
+}
+
+static void setLed(EPUCK_LED *led) {
+    int state;
+    double value[3];
+    state = led->power;
+    value[0] = led->red < 0 ? before.red : led->red;
+    value[1] = led->green < 0 ? before.green : led->green;
+    value[2] = led->blue < 0 ? before.blue : led->blue;
+
+    before.power = state;
+    before.red = value[0];
+    before.green = value[1];
+    before.blue = value[2];
+
+    LIBCALL(simulation, set_led, ledLightHandler, state, value);
+}
+
+TASK_GO
+{
+    EPUCK_LED led = {0, 0, 0, 0};
+    int dataNum;
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&led, sizeof(EPUCK_LED), &dataNum);
+    ERRIFGOTO(result, EXIT_);
+    if(dataNum > 0 && !isSame(&before, &led))
+        setLed(&led);
+EXIT_:
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END

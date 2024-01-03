@@ -1,0 +1,76 @@
+#include "UFTimer.h"
+#include <unistd.h>
+#define LEADER_SELECTION_THRESHOLD 1000
+TASK_CODE_BEGIN
+
+static semo_int64 last_time;
+
+TASK_INIT
+{
+	SEMO_LOG_INFO("INIT");
+    last_time = 0;
+}
+
+static void updateTime(semo_int32 group_id) {
+    semo_int64 current_time;
+    UFTimer_GetCurrentTime(THIS_TASK_ID, &current_time);
+    last_time = current_time;
+}
+
+static semo_int64 checkTime(semo_int32 group_id) {
+    semo_int64 previous_time = last_time;
+    semo_int64 current_time;
+    UFTimer_GetCurrentTime(THIS_TASK_ID, &current_time);
+    return current_time - previous_time;
+}
+
+static semo_int32 checkLeaderCandidate(semo_int32 group_id) {
+    semo_int32 leader = THIS_ROBOT_ID;
+    semo_int32 robot_num;
+    semo_int32 robot_list[SEMO_ROBOT_NUM];
+    LIBCALL(leader, get_selection_info_leader, group_id, &robot_num, robot_list, (semo_int8*) robot_list);
+    for (int i = 0; i < robot_num; i++) {
+        if(robot_list[i] < leader) {
+            leader = robot_list[i];
+        }
+    }
+    return leader;
+}
+
+static void leaderSelect(semo_int32 group_id) {
+    semo_int32 robot_id = THIS_ROBOT_ID;
+    LIBCALL(leader,set_selection_info_leader, group_id, (semo_int8*)&robot_id);
+    semo_int32 leader = checkLeaderCandidate(group_id);
+    semo_int32 previous_leader;
+    previous_leader = LIBCALL(leader, get_leader, group_id);
+    if (leader != previous_leader) {
+        LIBCALL(leader, set_leader, group_id, leader);
+        updateTime(group_id);
+    }
+    if(checkTime(group_id) > LEADER_SELECTION_THRESHOLD) {
+        LIBCALL(leader, set_leader_selection_state, group_id, LEADER_SELECTION_SELECTED);
+    }
+}
+
+TASK_GO
+{
+    for (int count = 0 ; count < LIBCALL(leader, get_group_num_leader) ; count++) {
+        semo_int32 group_id = LIBCALL(leader, get_group_id_leader, count);
+        LEADER_SELECTION_STATE leader_state = LIBCALL(leader, get_leader_selection_state, group_id);
+        switch(leader_state) {
+            case LEADER_SELECTION_NOT_SELECTED:
+            case LEADER_SELECTION_COLLISION:
+	            leaderSelect(group_id);
+                break;
+            default:
+                SEMO_LOG_DEBUG("ignore leader state (group: %d, state: %d)", group_id, leader_state);
+        }
+    }
+}
+
+TASK_WRAPUP
+{
+	SEMO_LOG_INFO("WRAP UP");
+}
+
+TASK_CODE_END

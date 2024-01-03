@@ -1,0 +1,68 @@
+/************************************
+ *
+ * File : EPucSim_position.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <string>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+static long long int robotObjectHandler;
+static long long int mapObjectHandler;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "orientation", &group, &port);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    robotObjectHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME), std::nullopt); 
+    mapObjectHandler = LIBCALL(simulation, get_parent_object, robotObjectHandler); 
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int dataNum;
+    uem_result result;
+    double orientation[3];
+    LIBCALL(simulation, get_orientation, robotObjectHandler, mapObjectHandler, orientation);
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)orientation, sizeof(double) * 3, &dataNum);
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END

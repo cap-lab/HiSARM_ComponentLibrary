@@ -1,0 +1,85 @@
+/************************************
+ *
+ * File : EPucSim_wheel.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <string>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+typedef struct _EPUCK_WHEEL {
+    double left_vel;
+    double right_vel;
+} EPUCK_WHEEL;
+static EPUCK_WHEEL before = {0, 0};
+static long long int leftMotorHandler;
+static long long int rightMotorHandler;
+static void setVelocity(double left_velocity, double right_velocity);
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &group, &port);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    leftMotorHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/leftJoint", std::nullopt); 
+    rightMotorHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/rightJoint", std::nullopt);
+    setVelocity(0, 0);
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static void setVelocity(double left_velocity, double right_velocity) {
+    LIBCALL(simulation, set_joint_target_velocity, leftMotorHandler, left_velocity);
+    LIBCALL(simulation, set_joint_target_velocity, rightMotorHandler, right_velocity);
+}
+
+TASK_GO
+{
+    EPUCK_WHEEL vel = {0, 0};
+    int dataNum;
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&vel, sizeof(EPUCK_WHEEL), &dataNum);
+    ERRIFGOTO(result, EXIT_);
+    if(before.left_vel != vel.left_vel || before.right_vel != vel.right_vel)
+        setVelocity(vel.left_vel, vel.right_vel);
+EXIT_:
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+    setVelocity(0, 0);
+}
+
+TASK_CODE_END
+

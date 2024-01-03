@@ -1,0 +1,86 @@
+/************************************
+ *
+ * File : EPucSim_position.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+static long long int visionHandler;
+// ##DEFINE_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "detectFire", &group, &port);
+// ##INIT_PORT_SECTION::END
+    visionHandler = LIBCALL(simulation, get_object, std::string("/") + THIS_ROBOT_NAME + "/lightSensor", std::nullopt);
+    // TODO: task initialize code
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int dataNum;
+    int resolution[2] = {64, 64};
+    double detect[4] = {0, 0, 0, 0};
+    uem_result result = ERR_UEM_NOERROR;
+    std::vector<uint8_t> img = LIBCALL(simulation, get_vision_sensor_img, visionHandler);
+    if (img.size() == 0) {
+        SEMO_LOG_ERROR("get_vision_sensor_img failed");
+        return;
+    }
+    for (int i = 0; i < resolution[0]; i++) {
+        for (int j = 0; j < resolution[1]; j++) {
+            if (img[(i * resolution[1] + j)*3] > 150) {
+                if (j < 20)
+                    detect[1] += img[(i * resolution[1] + j)*3];
+                else if (j>=44)
+                    detect[2] += img[(i * resolution[1] + j)*3];
+                else
+                    detect[3] += img[(i * resolution[1] + j)*3];
+                detect[0] += img[(i * resolution[1] + j)*3];
+            }
+        }
+    }
+    detect[0] /= (resolution[0] * resolution[1]);
+    detect[1] /= 20 *resolution[0];
+    detect[2] /= (resolution[1] - 40) * resolution[0];
+    detect[3] /= 20 *resolution[0];
+
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&detect, sizeof(double) * 4, &dataNum);
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END

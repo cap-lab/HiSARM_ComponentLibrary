@@ -1,0 +1,69 @@
+/************************************
+ *
+ * File : EPucSim_position.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "alarmFire", &group, &port);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int dataNum;
+    int detect = FALSE;
+    uem_result result = ERR_UEM_NOERROR;
+    if (LIBCALL(simulation, get_int32_signal, "fire", &detect) == TRUE) {
+        if (detect == 1)
+            detect = TRUE;
+        else 
+            detect = FALSE;
+    } else {
+        detect = FALSE;
+    }
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&detect, sizeof(int), &dataNum);
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END

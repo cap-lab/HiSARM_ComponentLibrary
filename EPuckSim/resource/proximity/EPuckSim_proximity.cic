@@ -1,0 +1,74 @@
+/************************************
+ *
+ * File : EPucSim_proximty.cic
+ * Date : Oct 28, 2022 10:46 AM
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <string>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+static long long int proxObjectHandler[8];
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "proximity", &group, &port);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    for (int i = 0 ; i < 8 ; i++)
+    {
+        json option;
+        option["index"] = i;
+        proxObjectHandler[i] = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/proxSensor", option); 
+    }
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int dataNum;
+    uem_result result;
+    double proximity[8];
+    for (int i = 0 ; i < 8 ; i++)
+    {
+        LIBCALL(simulation, get_proximity, proxObjectHandler[i], proximity + i);
+    }
+    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)proximity, sizeof(double) * 8, &dataNum);
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+}
+
+TASK_CODE_END
