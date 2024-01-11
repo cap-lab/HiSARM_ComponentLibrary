@@ -7,6 +7,7 @@
 
 #define PI 3.14159265358979
 #define MAX_VEL 120*(PI)/180
+#define SCALE_VEL 5.0
 
 enum turning {
     NO_TURN,
@@ -87,46 +88,33 @@ static void diffusionVector(EPUCKSIM_MOVE_PORTS *ports, int *collision, double *
     double proximityValue[8];
     double tempVector[2] = {0, 0};
     double proxRadians[8] = {-PI/2, -PI/4, -PI/12, PI/12, PI/4, PI/2, 7*PI/36, -7*PI/36};
+    double proxCounterRadians[4] = {-3*PI/4, -11*PI/12, 11*PI/12, 3*PI/4};
     int dataLength;
+    *collision = FALSE;
     UFMulticastPort_ReadFromBuffer(ports->proximity_group, ports->proximity_port, (unsigned char *)proximityValue, sizeof(double) * 8, &dataLength);
-    for (int i=1 ; i <= 4 ; i++){
+    for (int i=0 ; i <= 5 ; i++){
         double temp[2] = {0, 0};
         if(proximityValue[i] >  0.0) {
+            *collision = TRUE;
             getVectorFromRadianAndLength(proxRadians[i], proximityValue[i], temp);
         } else {
             getVectorFromRadianAndLength(proxRadians[i], 1, temp);
         }
         vectorSum(tempVector, temp, tempVector);
     }
-    tempVector[0] /= 4;
-    tempVector[1] /= 4;
-    if(lengthOfVector(tempVector) < 0.3) {
-        *collision = TRUE;
-        vector[0] = -MAX_VEL/tempVector[0];
-        vector[1] = -MAX_VEL/tempVector[1];
+    for (int i=0 ; i < 4 ; i++){
+        double temp[2] = {0, 0};
+        getVectorFromRadianAndLength(proxCounterRadians[i], 1, temp);
+        vectorSum(tempVector, temp, tempVector);
+    }
+    if(*collision == TRUE) {
+        vector[0] = -(MAX_VEL*SCALE_VEL*tempVector[1]);
+        vector[1] = -(MAX_VEL*SCALE_VEL*tempVector[0]);
     } else {
-        *collision = FALSE;
         vector[0] = 0;
         vector[1] = 0;
     }
 }
-
-/*
-static void getFireVector(double *fire, double *vector)
-{
-    double fireRadians[3] = {-PI/4, 0, PI/4};
-    double tempVector[2] = {0, 0};
-    for (int i=1 ; i <= 3 ; i++){
-        double temp[2] = {0, 0};
-        getVectorFromRadianAndLength(fireRadians[i], fire[i]/255, temp);
-        vectorSum(tempVector, temp, tempVector);
-    }
-    tempVector[0] /= 3;
-    tempVector[1] /= 3;
-    vector[0] = -MAX_VEL/tempVector[0];
-    vector[1] = -MAX_VEL/tempVector[1];
-}
-*/
 
 semo_int8 is_arrived(EPUCKSIM_MOVE_PORTS *ports, double *point)
 {
@@ -158,9 +146,9 @@ static uem_result vectorToTarget(EPUCKSIM_MOVE_PORTS *ports, double *targetPoint
     vector[1] = targetPoint[1] - position[1];
     targetRadian = vectorToRadian(vector);
     if (currentOrientation[1] > 2*PI || currentOrientation[1] < -2*PI) {
-        getVectorFromRadianAndLength(signedNormalize(targetRadian), lengthOfVector(vector), vector);
+        getVectorFromRadianAndLength(signedNormalize(targetRadian), lengthOfVector(vector)*MAX_VEL, vector);
     } else {
-        getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), lengthOfVector(vector), vector);
+        getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), lengthOfVector(vector)*MAX_VEL, vector);
     }
 EXIT_:
     return result;
@@ -173,7 +161,7 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
     double baseAngularWheelSpeed;
     radian = signedNormalize(vectorToRadian(vector));
     length = lengthOfVector(vector);
-    baseAngularWheelSpeed = max(min(length, MAX_VEL*2), MAX_VEL/2);
+    baseAngularWheelSpeed = min(length, MAX_VEL);
     //baseAngularWheelSpeed = MAX_VEL;
     if(*turningMechanism == HARD_TURN) {
        if(abs(radian) <= PI/3) {
@@ -213,7 +201,8 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
     }
     if (radian < 0) {
         double temp;
-        temp = vel.right_vel;                                                                                                                                                                                                                                                                   vel.right_vel = vel.left_vel;
+        temp = vel.right_vel;
+        vel.right_vel = vel.left_vel;
         vel.left_vel = temp;
     }
     return UFMulticastPort_WriteToBuffer(ports->wheel_group, ports->wheel_port, (unsigned char *)&vel, sizeof(EPUCK_WHEEL), &dataNum);
@@ -233,9 +222,10 @@ void move_to_target(EPUCKSIM_MOVE_PORTS *ports, int *turning_mechanism, double *
     ERRIFGOTO(result, EXIT_);
     diffusionVector(ports, &collision, diffusedVector);
     if (collision == TRUE) {
-        vectorSum(vector, diffusedVector, vector);
+        result = setWheelSpeedFromVector(ports, turning_mechanism, diffusedVector);
+    } else {
+        result = setWheelSpeedFromVector(ports, turning_mechanism, vector);
     }
-    result = setWheelSpeedFromVector(ports, turning_mechanism, vector);
 
 EXIT_:
     if (result != ERR_UEM_NOERROR) {

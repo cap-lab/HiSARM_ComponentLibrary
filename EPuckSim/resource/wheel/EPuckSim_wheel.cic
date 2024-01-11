@@ -62,8 +62,11 @@ TASK_GO
     uem_result result;
     result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&vel, sizeof(EPUCK_WHEEL), &dataNum);
     ERRIFGOTO(result, EXIT_);
-    if(before.left_vel != vel.left_vel || before.right_vel != vel.right_vel)
+    if(before.left_vel != vel.left_vel || before.right_vel != vel.right_vel) {
+        before.left_vel = vel.left_vel;
+        before.right_vel = vel.right_vel;
         setVelocity(vel.left_vel, vel.right_vel);
+    }
 EXIT_:
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);

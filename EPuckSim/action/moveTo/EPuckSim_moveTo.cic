@@ -51,6 +51,7 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
+    ports.robot_id = THIS_ROBOT_ID;
     count = 0;
 }
 

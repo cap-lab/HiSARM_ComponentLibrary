@@ -75,6 +75,7 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
+    ports.robot_id = THIS_ROBOT_ID;
     int dataNum;
     EPUCK_LED led = {1, 1, -1, -1};
     UFMulticastPort_WriteToBuffer(led_group, led_port, (unsigned char *)&led, sizeof(EPUCK_LED), &dataNum); 

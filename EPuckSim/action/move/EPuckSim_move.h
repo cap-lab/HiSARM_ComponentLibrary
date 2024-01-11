@@ -4,6 +4,7 @@
 #include "semo_common.h"
 
 typedef struct _EPUCKSIM_MOVE_PORTS {
+    int robot_id;
     int position_group;
     int position_port;
     int orientation_group;
