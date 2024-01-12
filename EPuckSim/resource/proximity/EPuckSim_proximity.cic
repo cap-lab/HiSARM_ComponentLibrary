@@ -17,10 +17,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
 // ##DEFINE_PORT_SECTION::END
 
+static RemoteAPIClientWrapper *simulator;
 static long long int proxObjectHandler[8];
 /////////////////////////////////////
 // init code
@@ -33,11 +34,12 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
     for (int i = 0 ; i < 8 ; i++)
     {
         json option;
         option["index"] = i;
-        proxObjectHandler[i] = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/proxSensor", option); 
+        proxObjectHandler[i] = simulator->get_object("/" + std::string(THIS_ROBOT_NAME) + "/proxSensor", option);
     }
 }
 
@@ -53,7 +55,7 @@ TASK_GO
     double proximity[8];
     for (int i = 0 ; i < 8 ; i++)
     {
-        LIBCALL(simulation, get_proximity, proxObjectHandler[i], proximity + i);
+        simulator->get_proximity(proxObjectHandler[i], proximity + i);
     }
     result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)proximity, sizeof(double) * 8, &dataNum);
     if(result != ERR_UEM_NOERROR) {

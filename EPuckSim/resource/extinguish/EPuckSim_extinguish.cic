@@ -17,10 +17,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
 // ##DEFINE_PORT_SECTION::END
 
+static RemoteAPIClientWrapper *simulator;
 static int before;
 /////////////////////////////////////
 // init code
@@ -34,6 +35,7 @@ TASK_INIT
     
     // TODO: task initialize code
     before = -1;
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
 }
 
 
@@ -42,9 +44,9 @@ TASK_INIT
 /////////////////////////////////////
 
 static void extinguish(int target) {
-    long long int fireHandle = LIBCALL(simulation, get_object, "/fire_" + std::to_string(target), std::nullopt); 
-    auto fire = LIBCALL(simulation, get_objects_in_tree, fireHandle);
-    LIBCALL(simulation, set_remove_objects, fire);
+    long long int fireHandle = simulator->get_object("/fire_" + std::to_string(target), std::nullopt);
+    auto fire = simulator->get_objects_in_tree(fireHandle);
+    simulator->set_remove_objects(fire);
     SEMO_LOG_INFO("extinguish fire_%d %lld", target, fireHandle);
 }
 

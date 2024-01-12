@@ -17,10 +17,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
 // ##DEFINE_PORT_SECTION::END
 
+static RemoteAPIClientWrapper *simulator;
 static long long int robotObjectHandler;
 /////////////////////////////////////
 // init code
@@ -33,7 +34,8 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    robotObjectHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME)); 
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
+    robotObjectHandler = simulator->get_object("/" + std::string(THIS_ROBOT_NAME));
 }
 
 
@@ -46,7 +48,7 @@ TASK_GO
     int dataNum;
     uem_result result;
     double pose[4];
-    result = LIBCALL(simulation, get_pose, robotObjectHandler, pose);
+    result = simulator->get_pose(robotObjectHandler, pose);
     ERRIFGOTO(result, EXIT_);
     result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)pose, sizeof(double) * 4, 0, &dataNum);
     ERRIFGOTO(result, EXIT_);

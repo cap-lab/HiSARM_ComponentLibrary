@@ -17,10 +17,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
 // ##DEFINE_PORT_SECTION::END
 
+static RemoteAPIClientWrapper *simulator;
 static long long int robotObjectHandler;
 static long long int mapObjectHandler;
 /////////////////////////////////////
@@ -34,8 +35,9 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    robotObjectHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME), std::nullopt); 
-    mapObjectHandler = LIBCALL(simulation, get_parent_object, robotObjectHandler); 
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
+    robotObjectHandler = simulator->get_object("/" + std::string(THIS_ROBOT_NAME), std::nullopt);
+    mapObjectHandler = simulator->get_parent_object(robotObjectHandler);
 }
 
 
@@ -48,7 +50,7 @@ TASK_GO
     int dataNum;
     uem_result result;
     double position[3];
-    LIBCALL(simulation, get_position, robotObjectHandler, mapObjectHandler, position);
+    simulator->get_position(robotObjectHandler, mapObjectHandler, position);
     result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)position, sizeof(double) * 3, &dataNum);
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);

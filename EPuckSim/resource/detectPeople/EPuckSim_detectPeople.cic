@@ -15,8 +15,9 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
+static RemoteAPIClientWrapper *simulator;
 // ##DEFINE_PORT_SECTION::END
 
 /////////////////////////////////////
@@ -30,6 +31,7 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
 }
 
 
@@ -42,7 +44,7 @@ TASK_GO
     int dataNum;
     int detect = FALSE;
     uem_result result = ERR_UEM_NOERROR;
-    if (LIBCALL(simulation, get_int32_signal, THIS_ROBOT_NAME, &detect) == TRUE) {
+    if (simulator->get_int32_signal(THIS_ROBOT_NAME, &detect) == TRUE) {
         if (detect == 1)
             detect = TRUE;
         else 

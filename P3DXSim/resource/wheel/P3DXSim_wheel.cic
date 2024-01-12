@@ -17,10 +17,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
 // ##DEFINE_PORT_SECTION::END
 
+static RemoteAPIClientWrapper *simulator;
 typedef struct _EPUCK_WHEEL {
     double left_vel;
     double right_vel;
@@ -40,8 +41,9 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    leftMotorHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/leftMotor", std::nullopt); 
-    rightMotorHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/rightMotor", std::nullopt);
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
+    leftMotorHandler = simulator->get_object("/" + std::string(THIS_ROBOT_NAME) + "/leftMotor", std::nullopt);
+    rightMotorHandler = simulator->get_object("/" + std::string(THIS_ROBOT_NAME) + "/rightMotor", std::nullopt);
     setVelocity(0, 0);
 }
 
@@ -51,8 +53,8 @@ TASK_INIT
 /////////////////////////////////////
 
 static void setVelocity(double left_velocity, double right_velocity) {
-    LIBCALL(simulation, set_joint_target_velocity, leftMotorHandler, left_velocity);
-    LIBCALL(simulation, set_joint_target_velocity, rightMotorHandler, right_velocity);
+    simulator->set_joint_target_velocity(leftMotorHandler, left_velocity);
+    simulator->set_joint_target_velocity(rightMotorHandler, right_velocity);
 }
 
 TASK_GO

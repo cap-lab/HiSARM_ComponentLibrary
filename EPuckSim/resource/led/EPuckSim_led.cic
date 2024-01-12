@@ -17,8 +17,8 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
 // ##DEFINE_PORT_SECTION::END
 
 typedef struct _EPUCK_LED {
@@ -28,6 +28,7 @@ typedef struct _EPUCK_LED {
     double blue;
 } EPUCK_LED;
 static EPUCK_LED before = {0, 0, 0, 0};
+static RemoteAPIClientWrapper *simulator;
 static long long int ledLightHandler;
 /////////////////////////////////////
 // init code
@@ -40,7 +41,8 @@ TASK_INIT
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    ledLightHandler = LIBCALL(simulation, get_object, "/" + std::string(THIS_ROBOT_NAME) + "/ledLight", std::nullopt); 
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
+    ledLightHandler = simulator->get_object("/" + std::string(THIS_ROBOT_NAME) + "/ledLight", std::nullopt);
 }
 
 
@@ -79,7 +81,7 @@ static void setLed(EPUCK_LED *led) {
     before.green = value[1];
     before.blue = value[2];
 
-    LIBCALL(simulation, set_led, ledLightHandler, state, value);
+    simulator->set_led(ledLightHandler, state, value);
 }
 
 TASK_GO
