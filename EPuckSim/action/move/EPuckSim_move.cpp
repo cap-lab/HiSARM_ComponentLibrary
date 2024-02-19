@@ -6,7 +6,7 @@
 #include <cmath>
 
 #define PI 3.14159265358979
-#define MAX_VEL 120*(PI)/180
+#define MAX_VEL 10.0
 #define SCALE_VEL 5.0
 
 enum turning {
@@ -56,16 +56,7 @@ static double vectorToRadian(double *vector)
 {
     return atan2(vector[1], vector[0]);
 }
-/*
-static int withInMinBoundIncludedMaxBoundIncluded(double radian)
-{
-    if (radian >= -PI/8 && radian <= PI/8) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-*/
+
 static void vectorSum(double *vector1, double *vector2, double *vector)
 {
     vector[0] = vector1[0] + vector2[0];
@@ -108,8 +99,8 @@ static void diffusionVector(EPUCKSIM_MOVE_PORTS *ports, int *collision, double *
         vectorSum(tempVector, temp, tempVector);
     }
     if(*collision == TRUE) {
-        vector[0] = -(MAX_VEL*SCALE_VEL*tempVector[1]);
-        vector[1] = -(MAX_VEL*SCALE_VEL*tempVector[0]);
+        vector[0] = -(tempVector[1]);
+        vector[1] = -(tempVector[0]);
     } else {
         vector[0] = 0;
         vector[1] = 0;
@@ -146,9 +137,11 @@ static uem_result vectorToTarget(EPUCKSIM_MOVE_PORTS *ports, double *targetPoint
     vector[1] = targetPoint[1] - position[1];
     targetRadian = vectorToRadian(vector);
     if (currentOrientation[1] > 2*PI || currentOrientation[1] < -2*PI) {
-        getVectorFromRadianAndLength(signedNormalize(targetRadian), lengthOfVector(vector)*MAX_VEL, vector);
+        //getVectorFromRadianAndLength(signedNormalize(targetRadian), lengthOfVector(vector), vector);
+        getVectorFromRadianAndLength(signedNormalize(targetRadian), 1, vector);
     } else {
-        getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), lengthOfVector(vector)*MAX_VEL, vector);
+        //getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), lengthOfVector(vector), vector);
+        getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), 1, vector);
     }
 EXIT_:
     return result;
@@ -162,7 +155,6 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
     radian = signedNormalize(vectorToRadian(vector));
     length = lengthOfVector(vector);
     baseAngularWheelSpeed = min(length, MAX_VEL);
-    //baseAngularWheelSpeed = MAX_VEL;
     if(*turningMechanism == HARD_TURN) {
        if(abs(radian) <= PI/3) {
           *turningMechanism = SOFT_TURN;
@@ -174,6 +166,7 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
        }
        else if(abs(radian) <= PI/6) {
           *turningMechanism = NO_TURN;
+          baseAngularWheelSpeed = MAX_VEL;
        }
     }
     if(*turningMechanism == NO_TURN) {
@@ -182,6 +175,8 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
        }
        else if(abs(radian) > PI/6) {
           *turningMechanism = SOFT_TURN;
+       } else {
+          baseAngularWheelSpeed = MAX_VEL;
        }
     }
     EPUCK_WHEEL vel;
@@ -221,11 +216,15 @@ void move_to_target(EPUCKSIM_MOVE_PORTS *ports, int *turning_mechanism, double *
     result = vectorToTarget(ports, targetPoint, position, vector);
     ERRIFGOTO(result, EXIT_);
     diffusionVector(ports, &collision, diffusedVector);
-    if (collision == TRUE) {
-        result = setWheelSpeedFromVector(ports, turning_mechanism, diffusedVector);
-    } else {
-        result = setWheelSpeedFromVector(ports, turning_mechanism, vector);
+	if (collision == TRUE) {
+		diffusedVector[0] *= SCALE_VEL;
+		diffusedVector[1] *= SCALE_VEL;
+	} else {
+		vector[0] *= SCALE_VEL;
+		vector[1] *= SCALE_VEL;
     }
+    vectorSum(vector, diffusedVector, vector);
+    result = setWheelSpeedFromVector(ports, turning_mechanism, vector);
 
 EXIT_:
     if (result != ERR_UEM_NOERROR) {

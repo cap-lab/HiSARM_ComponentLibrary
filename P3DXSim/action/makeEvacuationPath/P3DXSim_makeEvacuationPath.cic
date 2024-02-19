@@ -30,7 +30,8 @@ static int ultrasonic_port;
 // ##DEFINE_PORT_SECTION::END
 
 #define PI 3.14159265358979
-#define MAX_VEL 2.0
+#define MAX_VEL 5.0
+#define SCALE_VEL 5.0
 
 static double points[3][2] = {
     {0.9, -0.85},
@@ -104,17 +105,6 @@ static double vectorToRadian(double *vector)
     return atan2(vector[1], vector[0]);
 }
 
-/*
-static int withInMinBoundIncludedMaxBoundIncluded(double radian)
-{
-    if (radian >= -PI/8 && radian <= PI/8) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-*/
-
 static void vectorSum(double *vector1, double *vector2, double *vector)
 {
     vector[0] = vector1[0] + vector2[0];
@@ -134,8 +124,8 @@ static void getVectorFromRadianAndLength(double radian, double length, double *v
 
 static int aroundPoint(double *point, double *position)
 {
-    if (position[0] >= point[0] - 0.2 && position[0] <= point[0] + 0.2 &&
-        position[1] >= point[1] - 0.2 && position[1] <= point[1] + 0.2) {
+    if (position[0] >= point[0] - 0.5 && position[0] <= point[0] + 0.5 &&
+        position[1] >= point[1] - 0.5 && position[1] <= point[1] + 0.5) {
         return TRUE;
     } else {
         return FALSE;
@@ -164,24 +154,31 @@ static void diffusionVector(int *collision, double *vector)
 {
     double ultrasonicValue[16];
     double tempVector[2] = {0, 0};
-    double ultrasonicRadians[8] = {-PI/2, -PI*5/14, -PI*3/14, -PI*1/14, PI*1/14, PI*3/14, PI*5/14, PI/2};
+    double ultrasonicRadians[8] = {PI/2, PI*5/14, PI*3/14, PI*1/14, -PI*1/14, -PI*3/14, -PI*5/14, -PI/2};
+    double ultrasonicCounterRadians[8] = {-PI/2, -PI*9/14, -PI*11/14, -PI*13/14, PI*13/14, PI*11/14, PI*9/14, PI/2, };
     int dataLength;
+	int count = 0;
+    *collision = FALSE;
     UFMulticastPort_ReadFromBuffer(ultrasonic_group, ultrasonic_port, (unsigned char *)ultrasonicValue, sizeof(double) * 16, &dataLength);
-    for (int i=0 ; i < 8 ; i++){
+    for (int i=1 ; i < 7 ; i++){
         double temp[2] = {0, 0};
         if(ultrasonicValue[i] >  0.0) {
+			count++;
             getVectorFromRadianAndLength(ultrasonicRadians[i], ultrasonicValue[i], temp);
         } else {
-            getVectorFromRadianAndLength(ultrasonicRadians[i], 1, temp);
+            getVectorFromRadianAndLength(ultrasonicRadians[i], 0.7, temp);
         }
         vectorSum(tempVector, temp, tempVector);
     }
-    tempVector[0] /= 8;
-    tempVector[1] /= 8;
-    if(lengthOfVector(tempVector) < 0.3) {
-        *collision = TRUE;
-        vector[0] = -MAX_VEL/tempVector[0];
-        vector[1] = -MAX_VEL/tempVector[1];
+	if (count>=2) *collision = TRUE;
+    for (int i = 0 ; i < 8 ; i++) {
+        double temp[2] = {0, 0};
+        getVectorFromRadianAndLength(ultrasonicCounterRadians[i], 0.7, temp);
+        vectorSum(tempVector, temp, tempVector);
+    }
+    if(*collision == TRUE) {
+        vector[0] = -(tempVector[1]);
+        vector[1] = -(tempVector[0]);
     } else {
         *collision = FALSE;
         vector[0] = 0;
@@ -189,7 +186,7 @@ static void diffusionVector(int *collision, double *vector)
     }
 }
 
-static uem_result setWheelSpeedFromVector(double *vector)
+static uem_result setWheelSpeedFromVector(double *vector, int collision)
 {
     int dataNum;
     double radian;
@@ -197,7 +194,7 @@ static uem_result setWheelSpeedFromVector(double *vector)
     double baseAngularWheelSpeed;
     radian = signedNormalize(vectorToRadian(vector));
     length = lengthOfVector(vector);
-    baseAngularWheelSpeed = max(min(length, MAX_VEL), MAX_VEL/2);
+    baseAngularWheelSpeed = min(length, MAX_VEL);
     if(turningMechanism == HARD_TURN) {                                         
        if(abs(radian) <= PI/3) {
           turningMechanism = SOFT_TURN;
@@ -209,6 +206,7 @@ static uem_result setWheelSpeedFromVector(double *vector)
        }
        else if(abs(radian) <= PI/6) {
           turningMechanism = NO_TURN;
+          baseAngularWheelSpeed = MAX_VEL;
        }
     }
     if(turningMechanism == NO_TURN) {
@@ -217,6 +215,8 @@ static uem_result setWheelSpeedFromVector(double *vector)
        }
        else if(abs(radian) > PI/6) {
           turningMechanism = SOFT_TURN;
+       } else {
+          baseAngularWheelSpeed = MAX_VEL;
        }
     }
     P3DX_WHEEL vel;
@@ -236,9 +236,19 @@ static uem_result setWheelSpeedFromVector(double *vector)
     }
     if (radian < 0) {
         double temp;
-        temp = vel.right_vel;                                                                                                                                                                                                                                                                   vel.right_vel = vel.left_vel;
+        temp = vel.right_vel;
+        vel.right_vel = vel.left_vel;
         vel.left_vel = temp;
     }
+    if (collision == TRUE){
+		if (turningMechanism == SOFT_TURN){
+			vel.left_vel = -vel.left_vel/SCALE_VEL;
+			vel.right_vel = -vel.right_vel/SCALE_VEL;
+		} else if (turningMechanism == NO_TURN){
+			vel.left_vel = -1;
+		    vel.right_vel = -1;
+		}
+	}
     //SEMO_LOG_INFO("robot %s, turn mode %d, radian %f, vel (%f,%f)", THIS_ROBOT_NAME, turningMechanism, radian, vel.left_vel, vel.right_vel);
     return UFMulticastPort_WriteToBuffer(wheel_group, wheel_port, (unsigned char *)&vel, sizeof(P3DX_WHEEL), &dataNum);
 }
@@ -268,16 +278,28 @@ TASK_GO
         ERRIFGOTO(result, EXIT_);
         targetPoint[0] = points[count][0];
         targetPoint[1] = points[count][1];
-        if (aroundPoint(targetPoint, position) == TRUE && myRole > count) {
-            count++;
-        }
         result = vectorToTarget(targetPoint, position, vector);
         ERRIFGOTO(result, EXIT_);
         diffusionVector(&collision, diffusedVector);
-        if (collision == TRUE) {
-            vectorSum(vector, diffusedVector, vector);
+		if (collision == FALSE) {
+			vector[0] *= SCALE_VEL;
+			vector[1] *= SCALE_VEL;
+        } else {
+			diffusedVector[0] *= SCALE_VEL;
+			diffusedVector[1] *= SCALE_VEL;
+		}
+        vectorSum(vector, diffusedVector, vector);
+        if (aroundPoint(targetPoint, position) == TRUE) {
+            if (myRole > count) {
+                count++;
+            }
+            if (myRole <= count) {
+                vector[0] = 0;
+                vector[1] = 0;
+				collision = FALSE;
+            }
         }
-        result = setWheelSpeedFromVector(vector);
+        result = setWheelSpeedFromVector(vector, collision);
     }
 EXIT_:
     if (result != ERR_UEM_NOERROR) {
