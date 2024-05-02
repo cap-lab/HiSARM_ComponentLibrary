@@ -1,13 +1,12 @@
 /************************************
  *
- * File : EPucSim_SetSignal
+ * File : Turtoeblt3_wheel_raspberrypi
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <string>
 
 TASK_CODE_BEGIN
 
@@ -16,11 +15,18 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-static int group;
-static int port;
+STATIC int port_vel;
+STATIC int group;
+STATIC int port;
 // ##DEFINE_PORT_SECTION::END
-static RemoteAPIClientWrapper *simulator;
-static int before = -1;
+
+typedef struct _ControlVelocity{
+    double linear_x;
+    double angular_z;
+} ControlVelocity;
+
+static ControlVelocity before;
+
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -28,11 +34,13 @@ static int before = -1;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "signal", &group, &port);
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &group, &port);
+    UFPort_Initialize(TASK_ID, "vel", &port_vel);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
+    before.linear_x = 0;
+    before.angular_z = 0;
 }
 
 
@@ -43,13 +51,14 @@ TASK_INIT
 TASK_GO
 {
     int dataNum;
-    int detect = -1;
-    uem_result result = ERR_UEM_NOERROR;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&detect, sizeof(int), &dataNum);
+    uem_result result;
+    ControlVelocity vel = {0, 0};
+    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&vel, sizeof(ControlVelocity), &dataNum);
     ERRIFGOTO(result, EXIT_);
-    if (dataNum > 0 && before != detect) {
-        simulator->set_int32_signal(THIS_ROBOT_NAME, detect);
-        before = detect;
+    if (dataNum > 0 && (vel.linear_x != before.linear_x || vel.angular_z != before.angular_z)) {
+        result = UFPort_WriteToQueue(port_vel, (unsigned char *)&vel, sizeof(ControlVelocity), 0, &dataNum);
+        before.linear_x = vel.linear_x;
+        before.angular_z = vel.angular_z;
     }
 EXIT_:
     if(result != ERR_UEM_NOERROR) {
@@ -65,7 +74,6 @@ EXIT_:
 TASK_WRAPUP
 {
     // TODO: task wrapup code
-    simulator->set_int32_signal(THIS_ROBOT_NAME, -1);
 }
 
 TASK_CODE_END

@@ -1,7 +1,6 @@
 /************************************
  *
- * File : checkDistanceByLDS.cic
- * Date : Oct 28, 2022 10:46 AM
+ * File : Turtlebot3_lds
  *
 *************************************/
 
@@ -15,8 +14,6 @@
 #include <chrono>
 #include <thread>
 #include <random>
-#include "semo_distance.h"
-#include "turtlebot3_lds.h"
 
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
@@ -70,7 +67,7 @@ void init_lds(){
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "distance", &group, &port);
+    UFMulticastPort_Initialize(TASK_ID, "lds", &group, &port);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
@@ -90,45 +87,44 @@ static FrameData getFrameData() {
     return pkg->GetFrameData();
 }
 
-static std::vector<int> getAroundDistance(const FrameData &data){
-    float angle_increment = (data.angle_max - data.angle_min) / data.len;
+static void getAroundDistance(const FrameData &data, SEMO_DISTANCE *distance){
     float angle_point = data.angle_min; //1st point's angle
-
-    std::vector<int> around_distance={8000, 8000, 8000, 8000}; //max_distance = 8m, distance = {front, left, back, right}
+    float step = (data.angle_max - data.angle_min)/data.len;
     for (int i = 0; i < (int)data.len; i++){
-        // check one of 10 points because there are too many points.
 
-        angle_point += angle_increment;
         if(data.intensities[i]>100){ //if data is reliable
-            if(angle_point < 30 || 330 < angle_point){ //front
-                around_distance[0] = (around_distance[0] < data.distance[i]) ? around_distance[0] : data.distance[i];
-            }else if( 80 < angle_point && angle_point < 100 ){ //right
-                around_distance[1] = (around_distance[1] < data.distance[i]) ? around_distance[1] : data.distance[i];
-            }else if( 135 < angle_point && angle_point < 225 ){ //back
-                around_distance[2] = (around_distance[2] < data.distance[i]) ? around_distance[2] : data.distance[i];
-            }else if( 260 < angle_point && angle_point < 280 ){ //left
-                around_distance[3] = (around_distance[3] < data.distance[i]) ? around_distance[3] : data.distance[i];
+            if(angle_point <= 22.5 || 337.5 < angle_point){ //front
+                distance->front       = (distance->front       < data.distance[i]) ? distance->front       : data.distance[i];
+            } else if ( 22.5 < angle_point && angle_point <= 47.5){ //front_right
+                distance->front_right = (distance->front_right < data.distance[i]) ? distance->front_right : data.distance[i];
+            } else if ( 67.5 < angle_point && angle_point <= 112.5 ){ //right
+                distance->right       = (distance->right       < data.distance[i]) ? distance->right       : data.distance[i];
+            } else if (112.5 < angle_point && angle_point <= 157.5 ){ //back_right
+                distance->back_right  = (distance->back_right  < data.distance[i]) ? distance->back_right  : data.distance[i];
+            } else if (157.5 < angle_point && angle_point <= 202.5 ){ //back
+                distance->back        = (distance->back        < data.distance[i]) ? distance->back        : data.distance[i];
+            } else if (202.5 < angle_point && angle_point <= 247.5 ){ //back_left
+                distance->back_left   = (distance->back_left   < data.distance[i]) ? distance->back_left   : data.distance[i];
+            } else if (247.5 < angle_point && angle_point <= 292.5 ){ //left
+                distance->left        = (distance->left        < data.distance[i]) ? distance->left        : data.distance[i];
+            } else if (312.5 < angle_point && angle_point <= 337.5 ){ //front_left
+                distance->front_left  = (distance->front_left  < data.distance[i]) ? distance->front_left  : data.distance[i];
             }
         }
+        angle_point += step;
     }
-
-    return around_distance;
 }
 
 TASK_GO
 {
     int dataLength;
-    SEMO_DISTANCE lds;
+    SEMO_DISTANCE lds = {8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000};
     uem_result result = ERR_UEM_NOERROR;
 
     // TODO: task main code
     if (isFrameReady()){
         FrameData data = getFrameData();
-        std::vector<int> around_distance=getAroundDistance(data);
-        lds.front = around_distance[0];
-        lds.right = around_distance[1];
-        lds.back = around_distance[2];
-        lds.left = around_distance[3];
+        getAroundDistance(data, &lds);
         result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&lds, sizeof(SEMO_DISTANCE), &dataLength);
     }
     if(result != ERR_UEM_NOERROR) {

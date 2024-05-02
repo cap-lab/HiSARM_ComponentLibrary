@@ -17,7 +17,7 @@ typedef struct _EPUCKSIM_MOVE_PORTS {
 
 void move_init(int *turning_mechanism);
 void move_to_target(EPUCKSIM_MOVE_PORTS *ports, int *turning_mechanism, double *target);
-semo_int8 is_arrived(EPUCKSIM_MOVE_PORTS *ports, double *target);
+semo_int8 is_arrived(double arround, EPUCKSIM_MOVE_PORTS *ports, double *target);
 void move_wrapup(EPUCKSIM_MOVE_PORTS *ports);
 
 #endif

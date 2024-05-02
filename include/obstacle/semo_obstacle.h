@@ -1,7 +1,7 @@
-#ifndef __SEMO_DISTANCE_HEADER__
-#define __SEMO_DISTANCE_HEADER__
+#ifndef __SEMO_OBSTACLE_HEADER__
+#define __SEMO_OBSTACLE_HEADER__
 
-typedef struct _SEMO_DISTANCE {
+typedef struct _SEMO_OBSTACLE {
     int front;
     int back;
     int left;
@@ -10,6 +10,6 @@ typedef struct _SEMO_DISTANCE {
     int back_right;
     int front_left;
     int back_left;
-} SEMO_DISTANCE;
+} SEMO_OBSTACLE;
 
 #endif

@@ -1,0 +1,184 @@
+/************************************
+ *
+ * File : searchMineral
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <random>
+#include <vector>
+#include <chrono>
+#include <iostream>
+#include <cmath>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+#define GOAL 10
+
+// ##DEFINE_PORT_SECTION::START
+static int found_port;
+static int ret_port;
+static int obstacle_group;
+static int obstacle_port;
+static int mineral_group;
+static int mineral_port;
+static int direction_group;
+static int direction_port;
+// ##DEFINE_PORT_SECTION::END
+
+using namespace std;
+
+static int count = 0;
+static SEMO_MOVE direction;
+static int turn;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFPort_Initialize(TASK_ID, "found", &found_port);
+    UFPort_Initialize(TASK_ID, "result", &ret_port);
+    UFMulticastPort_Initialize(TASK_ID, "obstacleDetector", &obstacle_group, &obstacle_port);
+    UFMulticastPort_Initialize(TASK_ID, "mineralDetector", &mineral_group, &mineral_port);
+    UFMulticastPort_Initialize(TASK_ID, "direction", &direction_group, &direction_port);
+
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    turn = FALSE;
+    direction = SEMO_MOVE_STOP;
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static uem_result setDirection()
+{
+    int dataLength;
+    uem_result result;
+    SEMO_OBSTACLE obstacle;
+    result = UFMulticastPort_ReadFromBuffer(obstacle_group, obstacle_port, (unsigned char *)&obstacle, sizeof(SEMO_OBSTACLE), &dataLength);
+    ERRIFGOTO(result, EXIT_);
+
+    if (dataLength > 0 && (obstacle.front > 0 || obstacle.front_right > 0 || obstacle.front_left > 0)) {
+        direction = SEMO_MOVE_RIGHT;
+        turn = TRUE;
+    } else if (turn == TRUE) {
+        direction = SEMO_MOVE_FORWARD;
+        turn = FALSE;
+    } else {
+        vector<double> weights = {0.4, 0.4, 0.1, 0.1};
+        discrete_distribution<int> weighted_distribution(weights.begin(), weights.end());
+        auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        mt19937 eng(seed);
+        int random_index = weighted_distribution(eng);
+        switch (random_index) {
+            case 1:
+                direction = SEMO_MOVE_FORWARD;
+                break;
+            case 2:
+                direction = SEMO_MOVE_RIGHT;
+                break;
+            case 3:
+                direction = SEMO_MOVE_LEFT;
+                break;
+            default:
+                break;
+        }
+        turn = FALSE;
+    }
+    result = UFMulticastPort_WriteToBuffer(direction_group, direction_port, (unsigned char *)&direction, sizeof(SEMO_MOVE), &dataLength);
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+    return result;
+}
+
+static int checkDetect() {
+    int detect;
+    int dataLength;
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(mineral_group, mineral_port, (unsigned char *)&detect, sizeof(int), &dataLength);
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+        detect = FALSE;
+    }
+    return detect;
+}
+
+static int getTotalFoundCount() {
+    int count_list[SEMO_ROBOT_NUM];
+    int robot_id_list[SEMO_ROBOT_NUM];
+    int robot_num;
+    int total_count = 0;
+    
+    LIBCALL(count, get_shared_data_action, &robot_num, robot_id_list, count_list);
+
+    for (int i = 0 ; i < robot_num ; i++) {
+        total_count += count_list[i];
+    }
+
+    return total_count;
+}
+
+TASK_GO
+{
+    uem_result result;
+    int dataLength;
+
+    if (getTotalFoundCount() >= GOAL) {
+        int found = FALSE;
+        int ret = TRUE;
+        result = UFPort_WriteToBuffer(found_port, (unsigned char *)&found, sizeof(int), 0, &dataLength);
+        ERRIFGOTO(result, EXIT_);
+        result = UFPort_WriteToBuffer(ret_port, (unsigned char *)&ret, sizeof(int), 0, &dataLength);
+        ERRIFGOTO(result, EXIT_);
+        return;
+    }
+
+    if (checkDetect() == TRUE) {
+        int found = TRUE;
+        int ret = FALSE;
+        count++;
+        LIBCALL(count, set_shared_data_action, &count);
+        result = UFPort_WriteToBuffer(found_port, (unsigned char *)&found, sizeof(int), 0, &dataLength);
+        ERRIFGOTO(result, EXIT_);
+        result = UFPort_WriteToBuffer(ret_port, (unsigned char *)&ret, sizeof(int), 0, &dataLength);
+        ERRIFGOTO(result, EXIT_);
+        return;
+    }
+
+    result = setDirection();
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    int dataLength;
+    uem_result result;
+    direction = SEMO_MOVE_STOP;
+    printf("merong\n");
+    result = UFMulticastPort_WriteToBuffer(direction_group, direction_port, (unsigned char *)&direction, sizeof(SEMO_MOVE), &dataLength);
+    SEMO_LOG_INFO("Communication wrapup result code(%X)", result);
+}
+
+TASK_CODE_END

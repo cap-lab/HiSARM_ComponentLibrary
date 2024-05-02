@@ -10,8 +10,8 @@
 /////////////////////////////////////
 #include <iostream>
 #include <string>
-#include "semo_direction.h"
-#include "semo_color.h"
+#include "turtlebot3_wheel.h"
+#include "turtlebot3_color.h"
 
 // ##DEFINE_SECTION::START
 // ##DEFINE_SECTION::END
@@ -33,8 +33,8 @@ STATIC int group_color;
 STATIC int port_color;
 STATIC int group_wheel;
 STATIC int port_wheel;
-STATIC int group_distance;
-STATIC int port_distance;
+STATIC int group_lds;
+STATIC int port_lds;
 // ##DEFINE_PORT_SECTION::END
 
 // ##DEFINE_MULTICAST_PORT_SECTION::START
@@ -61,7 +61,7 @@ TASK_INIT
     // resource
     UFMulticastPort_Initialize(TASK_ID, "color", &group_color, &port_color);
     UFMulticastPort_Initialize(TASK_ID, "wheel", &group_wheel, &port_wheel);
-    UFMulticastPort_Initialize(TASK_ID, "distance", &group_distance, &port_distance);
+    UFMulticastPort_Initialize(TASK_ID, "lds", &group_lds, &port_lds);
 // ##INIT_PORT_SECTION::END
 
 // ##INIT_MULTICAST_PORT_SECTION::START
@@ -88,14 +88,14 @@ TASK_GO
     int group = 0;
     int isLeader = 0;
     int isFrontMember = 1;
-    SEMO_DISTANCE distance;
+    TURTLEBOT_LDS lds;
 
     UFPort_ReadFromQueue(port_isFrontMember, (unsigned char *)&isFrontMember, sizeof(int), 0 , &dataLength); 
     UFPort_ReadFromBuffer(port_group, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_target, (unsigned char *)&target, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromBuffer(port_area, (unsigned char *)&area, sizeof(int), 0 , &dataLength);
     UFMulticastPort_ReadFromBuffer(group_color, port_color, (unsigned char *)&color, sizeof(int), &dataLength);
-    UFMulticastPort_ReadFromBuffer(group_distance, port_distance, (unsigned char *)&distance, sizeof(SEMO_DISTANCE), &dataLength);
+    UFMulticastPort_ReadFromBuffer(group_lds, port_lds, (unsigned char *)&lds, sizeof(TURTLEBOT_LDS), &dataLength);
 
     if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED) {
         isLeader = LIBCALL(leader, get_leader, group);
@@ -110,9 +110,18 @@ TASK_GO
     
     if (isFound == 0){
         std::string robotName = THIS_ROBOT_NAME;
-        /*if(robotName.compare("Burger_1") == 0){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
+        if(robotName.compare("Burger_1") == 0){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
             target += 2;
-        }*/ // this code is no longer needed since all the sensors are fixed
+        }
+        if(robotName.compare("Burger_2") == 0){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
+            target += 2;
+        }
+        if(robotName.compare("Burger_5") == 0){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
+            target += 2;
+        }
+        if(robotName.compare("Burger_3") == 0){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
+            target += 2;
+        }
 
         if (color == target){
             count++;
@@ -125,7 +134,7 @@ TASK_GO
             SEMO_LOG_INFO("target found");
             direction = STOP_;
         }else{  // if the distance is too close to obstacles or too far from the obstacles, the robot turns left to change the direction 
-            if(distance.front < 350 || distance.front > 2000){ 
+            if(lds.front < 350 || lds.front > 2000){ 
                 if (isFrontMember == 1){
                     direction = STOP_;
                 }else{
@@ -141,7 +150,7 @@ TASK_GO
         }
     }
     
-    SEMO_LOG_WARN("group: %d, color: %d, count: %d, target: %d, direction: %d, distance: %d, isFrontMember: %d\n", group, color, count, target, direction, distance.front, isFrontMember);
+    SEMO_LOG_WARN("color: %d, count: %d, target: %d, direction: %d, distance: %d, isFrontMember: %d\n", color, count, target, direction, lds.front, isFrontMember);
     UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *)&direction, sizeof(int), &dataLength);
     if(isFound == 1) {
         UFPort_WriteToBuffer(port_isFound, (unsigned char *)&isFound, sizeof(int), 0 , &dataLength);

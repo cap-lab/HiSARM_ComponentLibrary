@@ -1,13 +1,13 @@
 /************************************
  *
- * File : EPucSim_SetSignal
+ * File : Turtlebot3_ledControl
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <string>
+#include "semo_led.h"
 
 TASK_CODE_BEGIN
 
@@ -16,11 +16,13 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-static int group;
-static int port;
+STATIC int group_led;
+STATIC int port_led;
+STATIC int group_ledControl;
+STATIC int port_ledControl;
 // ##DEFINE_PORT_SECTION::END
-static RemoteAPIClientWrapper *simulator;
-static int before = -1;
+
+
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -28,11 +30,11 @@ static int before = -1;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "signal", &group, &port);
+    UFMulticastPort_Initialize(TASK_ID, "ledControl", &group_ledControl, &port_ledControl);
+    UFMulticastPort_Initialize(TASK_ID, "led", &group_led, &port_led);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
 }
 
 
@@ -42,15 +44,15 @@ TASK_INIT
 
 TASK_GO
 {
+    int command;
+    SEMO_LED led;
     int dataNum;
-    int detect = -1;
-    uem_result result = ERR_UEM_NOERROR;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&detect, sizeof(int), &dataNum);
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(group_ledControl, port_ledControl, (unsigned char *)&command, sizeof(int), &dataNum);
     ERRIFGOTO(result, EXIT_);
-    if (dataNum > 0 && before != detect) {
-        simulator->set_int32_signal(THIS_ROBOT_NAME, detect);
-        before = detect;
-    }
+    led.left = command;
+    led.right = command;
+    result = UFMulticastPort_WriteToBuffer(group_led, port_led, (unsigned char *)&led, sizeof(SEMO_LED), &dataNum);
 EXIT_:
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);
@@ -65,7 +67,6 @@ EXIT_:
 TASK_WRAPUP
 {
     // TODO: task wrapup code
-    simulator->set_int32_signal(THIS_ROBOT_NAME, -1);
 }
 
 TASK_CODE_END

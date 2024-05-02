@@ -24,15 +24,6 @@ TASK_CODE_BEGIN
 STATIC int group;
 STATIC int port;
 // ##DEFINE_PORT_SECTION::END
-enum EK_COLOR {
-    EK_UNKNOWN,
-    EK_WHITE,
-    EK_BLACK,
-    EK_RED,
-    EK_GREEN,
-    EK_BLUE,
-    EK_YELLOW
-};
 
 /////////////////////////////////////
 // init code
@@ -53,26 +44,6 @@ TASK_INIT
 /////////////////////////////////////
 // go code
 /////////////////////////////////////
-
-static int colorConverter(int before) {
-    switch(before) {
-        case EK_BLACK:
-            return SEMO_BLACK;
-        case EK_BLUE:
-            return SEMO_BLUE;
-        case EK_GREEN:
-            return SEMO_GREEN;
-        case EK_RED:
-            return SEMO_RED;
-        case EK_WHITE:
-            return SEMO_WHITE;
-        case EK_YELLOW:
-            return SEMO_YELLOW;
-        default:
-            return 0;
-    }
-}
-
 TASK_GO
 {
     int color;
@@ -80,8 +51,8 @@ TASK_GO
     int dataNum;
     uem_result result;
     SEMO_read1ByteTxRx(CM_ID, COLOR_ADDRESS, &value);
-    color = colorConverter((int) value);
-    SEMO_LOG_DEBUG("cmid %d, color address %d, color %d", CM_ID, COLOR_ADDRESS, color);
+    color = (int) value;
+    SEMO_LOG_DEBUG("cmid %d, color address %d, ori value: %d, color %d", CM_ID, COLOR_ADDRESS, (int) value, color);
     result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&color, sizeof(int), &dataNum);
     ERRIFGOTO(result, EXIT_);
 EXIT_:

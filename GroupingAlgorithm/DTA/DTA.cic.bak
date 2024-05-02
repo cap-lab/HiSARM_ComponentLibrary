@@ -3,8 +3,7 @@
 #include <random>
 #include <unistd.h>
 
-#define GROUPING_THRESHOLD 50
-#define MAX_SELECTED_COUNT 5
+#define GROUPING_THRESHOLD 30
 
 STATIC int port_mode;
 STATIC int port_result;
@@ -17,8 +16,8 @@ typedef struct _ROBOT_DB
 } ROBOT_DB;
 
 static int count = 0;
-static int selected_count = 0;
 static int last_shared_robot_num = 0;
+static int selected = FALSE;
 static int current_selecting_mode = -1;
 static int sum_of_workload = 0;
 static float threshold = 0.0;
@@ -28,8 +27,8 @@ TASK_CODE_BEGIN
 static void parameterWrapup()
 {
     count = 0;
-    selected_count = 0;
     last_shared_robot_num = 0;
+    selected = FALSE;
     current_selecting_mode = -1;
     sum_of_workload = 0;
     threshold = 0.0;
@@ -60,24 +59,27 @@ static float getThreshold()
     semo_int32 num_of_group_candidate = LIBCALL(group, get_grouping_candidate_num);
     SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
     float max_ratio = 0.0;
-    float second_max_ratio = 0.0;
+    float min_ratio = 1.0;
     for (int i = 0; i < num_of_group_candidate; i++)
     {
         float task_ratio = 1.0 / candidate_group_list[i].min;
         if (max_ratio < task_ratio)
         {
             max_ratio = task_ratio;
-            second_max_ratio = max_ratio;
+        }
+        if (task_ratio < min_ratio)
+        {
+            min_ratio = task_ratio;
         }
     }
-    return (max_ratio + max_ratio)*5/7;
+    return max_ratio + min_ratio;
 }
 
 static void parameterInit(int mode)
 {
     count = 0;
     last_shared_robot_num = 0;
-    selected_count = 0;
+    selected = FALSE;
     current_selecting_mode = mode;
     sum_of_workload = getSumOfWorkload();
     threshold = getThreshold();
@@ -89,7 +91,7 @@ static void firstTimeSelectGroup()
     SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
     SEMO_GROUP *selected_group = &candidate_group_list[rand() % num_of_group_candidate];
     ROBOT_DB data = {THIS_ROBOT_ID, selected_group->id, 0};
-    LIBCALL(group, set_shared_data_grouping, (semo_uint8 *)&data);
+    LIBCALL(group, set_shared_data_grouping, (semo_uint8*)&data, sizeof(ROBOT_DB));
 }
 
 static float getTaskProb(int target_group)
@@ -101,22 +103,23 @@ static float getTaskProb(int target_group)
     for (int i = 0; i < shared_robot_num; i++)
     {
         ROBOT_DB shared_db;
-        LIBCALL(group, get_shared_data_grouping, i, (semo_uint8 *)&shared_db);
-        SEMO_LOG_INFO("this robot %d, robot %d, group %d, count %d", THIS_ROBOT_ID, shared_db.robot_id, shared_db.group, shared_db.count);
+        LIBCALL(group, get_shared_data_grouping, i, (semo_uint8 *)&shared_db, sizeof(ROBOT_DB));
         if (target_group == shared_db.group)
         {
             num_assigned_robot++;
         }
     }
-    return (shared_robot_num * group_info.min) * 1.0 / (sum_of_workload * num_assigned_robot);
+    SEMO_LOG_WARN("shared num %d, min %d, swl %d, assigned %d", shared_robot_num, group_info.min, sum_of_workload, num_assigned_robot);
+    return (shared_robot_num * group_info.min)*1.0 / (sum_of_workload * num_assigned_robot);
 }
 
 static void selectGroup(int current_mode)
 {
     ROBOT_DB my_db;
-    LIBCALL(group, get_shared_data_grouping, 0, (unsigned char *)&my_db);
+    LIBCALL(group, get_shared_data_grouping, 0, (unsigned char *)&my_db, sizeof(ROBOT_DB));
     semo_int32 last_selected_group = my_db.group;
     float task_prob = getTaskProb(last_selected_group);
+    SEMO_LOG_WARN("task_prob %f", task_prob);
     if (task_prob < 1)
     {
         semo_int32 num_of_group_candidate = LIBCALL(group, get_grouping_candidate_num);
@@ -144,9 +147,7 @@ static void selectGroup(int current_mode)
             my_db.count += 1;
         }
     }
-    SEMO_LOG_INFO("robot %d, group %d, count %d", my_db.robot_id, my_db.group, my_db.count);
-    LIBCALL(group, set_shared_data_grouping, (unsigned char *)&my_db);
-
+    LIBCALL(group, set_shared_data_grouping, (unsigned char *)&my_db, sizeof(ROBOT_DB));
     semo_int32 shared_robot_num = LIBCALL(group, get_shared_robot_num);
     if (last_shared_robot_num < shared_robot_num)
     {
@@ -165,16 +166,18 @@ static float getTaskRatio(int target_group)
     SEMO_GROUP group_info;
     LIBCALL(group, get_group_info, target_group, &group_info);
     semo_int32 shared_robot_num = LIBCALL(group, get_shared_robot_num);
+    SEMO_LOG_WARN("num %d", shared_robot_num);
     for (int i = 0; i < shared_robot_num; i++)
     {
         ROBOT_DB shared_db;
-        LIBCALL(group, get_shared_data_grouping, i, (semo_uint8 *)&shared_db);
+        LIBCALL(group, get_shared_data_grouping, i, (semo_uint8 *)&shared_db, sizeof(ROBOT_DB));
+        SEMO_LOG_WARN("target %d, robot %d, group %d, count %d", target_group, shared_db.robot_id, shared_db.group, shared_db.count);
         if (target_group == shared_db.group)
         {
             num_assigned_robot++;
         }
     }
-    return num_assigned_robot * 1.0 / group_info.min;
+    return num_assigned_robot * 1.0/ group_info.min;
 }
 
 static int stopCheck(int mode)
@@ -183,6 +186,7 @@ static int stopCheck(int mode)
     std::vector<float> task_ratio_list;
     semo_int32 num_of_group_candidate = LIBCALL(group, get_grouping_candidate_num);
     SEMO_GROUP *candidate_group_list = LIBCALL(group, get_grouping_candidate_list);
+    SEMO_LOG_WARN("num_of_group_candidate %d", num_of_group_candidate);
     for (int i = 0; i < num_of_group_candidate; i++)
     {
         task_ratio_list.push_back(getTaskRatio(candidate_group_list[i].id));
@@ -191,15 +195,21 @@ static int stopCheck(int mode)
     {
         for (int j = 0; j < num_of_group_candidate; j++)
         {
+            SEMO_LOG_WARN("task_ratio i %d %f, j %d %f", i, task_ratio_list.at(i), j, task_ratio_list.at(j));
             if (std::abs(task_ratio_list.at(i) - task_ratio_list.at(j)) > threshold ||
                 task_ratio_list.at(i) < 1 || task_ratio_list.at(j) < 1)
             {
+                
                 result = FALSE;
                 break;
             }
         }
         if (result == FALSE)
             break;
+    }
+    if (result == FALSE && count > GROUPING_THRESHOLD)
+    {
+        result = TRUE;
     }
     return result;
 }
@@ -220,28 +230,19 @@ TASK_GO
         parameterInit(mode);
         firstTimeSelectGroup();
     }
-    else if (current_selecting_mode >= 0)
+    else if (current_selecting_mode >= 0 && selected == FALSE)
     {
-        semo_int8 selected;
         selectGroup(current_selecting_mode);
         selected = stopCheck(current_selecting_mode);
-        if (selected == TRUE)
-        {
-            selected_count += 1;
-        }
-        else
-        {
-            selected_count = 0;
-        }
     }
 
-    if (MAX_SELECTED_COUNT < selected_count || GROUPING_THRESHOLD < count)
+    if (selected == TRUE)
     {
         ROBOT_DB shared_db;
-        LIBCALL(group, get_shared_data_grouping, 0, (semo_uint8 *)&shared_db);
-        SEMO_LOG_INFO("Group Selected (Mode %d, Group %d)", current_selecting_mode, shared_db.group);
+        LIBCALL(group, get_shared_data_grouping, 0, (semo_uint8 *)&shared_db, sizeof(ROBOT_DB));
+        SEMO_LOG_WARN("Group Selected (Mode %d, Group %d)",current_selecting_mode, shared_db.group);
         result = UFPort_WriteToBuffer(port_result, (unsigned char *)&shared_db.group, sizeof(semo_int32), 0, &length);
-        LIBCALL(group, set_grouping_state, current_selecting_mode, SEMO_GROUP_SELECTION_WRAPUP);
+        LIBCALL(group, set_grouping_state, current_selecting_mode, SEMO_GROUP_SELECTION_STOP);
         parameterWrapup();
     }
 _EXIT:
@@ -258,3 +259,5 @@ TASK_WRAPUP
 }
 
 TASK_CODE_END
+
+#undef GROUPING_THRESHOLD

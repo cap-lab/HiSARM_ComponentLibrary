@@ -6,8 +6,8 @@
 #include <cmath>
 
 #define PI 3.14159265358979
-#define MAX_VEL 10.0
-#define SCALE_VEL 5.0
+#define MAX_VEL 7.0
+#define SCALE_VEL 3.0
 
 enum turning {
     NO_TURN,
@@ -78,44 +78,41 @@ static void diffusionVector(EPUCKSIM_MOVE_PORTS *ports, int *collision, double *
 {
     double proximityValue[8];
     double tempVector[2] = {0, 0};
-    double proxRadians[8] = {-PI/2, -PI/4, -PI/12, PI/12, PI/4, PI/2, 7*PI/36, -7*PI/36};
-    double proxCounterRadians[4] = {-3*PI/4, -11*PI/12, 11*PI/12, 3*PI/4};
+    double proxRadians[8] = {PI/2, PI/4, PI/12, -PI/12, -PI/4, -PI/2, -3*PI/4, 3*PI/4};
     int dataLength;
     *collision = FALSE;
     UFMulticastPort_ReadFromBuffer(ports->proximity_group, ports->proximity_port, (unsigned char *)proximityValue, sizeof(double) * 8, &dataLength);
-    for (int i=0 ; i <= 5 ; i++){
+    for (int i=0 ; i <= 7 ; i++){
         double temp[2] = {0, 0};
         if(proximityValue[i] >  0.0) {
             *collision = TRUE;
-            getVectorFromRadianAndLength(proxRadians[i], proximityValue[i], temp);
-        } else {
-            getVectorFromRadianAndLength(proxRadians[i], 1, temp);
+            getVectorFromRadianAndLength(proxRadians[i], 0.05-proximityValue[i], temp);
         }
         vectorSum(tempVector, temp, tempVector);
     }
-    for (int i=0 ; i < 4 ; i++){
-        double temp[2] = {0, 0};
-        getVectorFromRadianAndLength(proxCounterRadians[i], 1, temp);
-        vectorSum(tempVector, temp, tempVector);
-    }
+    
     if(*collision == TRUE) {
-        vector[0] = -(tempVector[1]);
-        vector[1] = -(tempVector[0]);
+        vector[0] = -tempVector[0]/0.05;
+        vector[1] = -tempVector[1]/0.05;
     } else {
         vector[0] = 0;
         vector[1] = 0;
     }
 }
 
-semo_int8 is_arrived(EPUCKSIM_MOVE_PORTS *ports, double *point)
+static double getDistance(double *point1, double *point2)
+{
+	return sqrt(pow(point1[0] - point2[0], 2) + pow(point1[1] - point2[1], 2));
+}
+
+semo_int8 is_arrived(double arround, EPUCKSIM_MOVE_PORTS *ports, double *target)
 {
     double position[3];
     int dataLength;
     int result;
     result = UFMulticastPort_ReadFromBuffer(ports->position_group, ports->position_port, (unsigned char *)position, sizeof(double) * 3, &dataLength);
     ERRIFGOTO(result, EXIT_);
-    if (position[0] >= point[0] - 0.2 && position[0] <= point[0] + 0.2 &&
-        position[1] >= point[1] - 0.2 && position[1] <= point[1] + 0.2) {
+	if(getDistance(target, position) <= arround) {
         return TRUE;
     }
 EXIT_:
@@ -137,10 +134,8 @@ static uem_result vectorToTarget(EPUCKSIM_MOVE_PORTS *ports, double *targetPoint
     vector[1] = targetPoint[1] - position[1];
     targetRadian = vectorToRadian(vector);
     if (currentOrientation[1] > 2*PI || currentOrientation[1] < -2*PI) {
-        //getVectorFromRadianAndLength(signedNormalize(targetRadian), lengthOfVector(vector), vector);
         getVectorFromRadianAndLength(signedNormalize(targetRadian), 1, vector);
     } else {
-        //getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), lengthOfVector(vector), vector);
         getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), 1, vector);
     }
 EXIT_:
@@ -150,35 +145,30 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
 {
     int dataNum;
     double radian;
-    double length;
     double baseAngularWheelSpeed;
     radian = signedNormalize(vectorToRadian(vector));
-    length = lengthOfVector(vector);
-    baseAngularWheelSpeed = min(length, MAX_VEL);
+    baseAngularWheelSpeed = MAX_VEL;
     if(*turningMechanism == HARD_TURN) {
        if(abs(radian) <= PI/3) {
           *turningMechanism = SOFT_TURN;
        }
     }
-    if(*turningMechanism == SOFT_TURN) {
-       if(abs(radian) > PI/2) {
+	else if(*turningMechanism == SOFT_TURN) {
+       if(fabs(radian) > PI/2) {
           *turningMechanism = HARD_TURN;
        }
-       else if(abs(radian) <= PI/6) {
+       else if(fabs(radian) <= PI/8) {
           *turningMechanism = NO_TURN;
-          baseAngularWheelSpeed = MAX_VEL;
        }
     }
-    if(*turningMechanism == NO_TURN) {
-       if(abs(radian) > PI/2) {
+	else if(*turningMechanism == NO_TURN) {
+       if(fabs(radian) > PI/2) {
           *turningMechanism = HARD_TURN;
        }
-       else if(abs(radian) > PI/6) {
+       else if(fabs(radian) > PI/8) {
           *turningMechanism = SOFT_TURN;
-       } else {
-          baseAngularWheelSpeed = MAX_VEL;
-       }
-    }
+       }    
+	}
     EPUCK_WHEEL vel;
     switch(*turningMechanism){
         case NO_TURN:
@@ -186,12 +176,12 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
             vel.right_vel = baseAngularWheelSpeed;
             break;
         case SOFT_TURN:
-                vel.left_vel = baseAngularWheelSpeed - baseAngularWheelSpeed*(1 - radian / PI);
-                vel.right_vel = baseAngularWheelSpeed + baseAngularWheelSpeed * (1 - radian / PI);
+                vel.left_vel = baseAngularWheelSpeed/2 - baseAngularWheelSpeed * (fabs(radian) / PI);
+                vel.right_vel = baseAngularWheelSpeed/2 + baseAngularWheelSpeed * (fabs(radian) / PI);
             break;
         case HARD_TURN:
-                vel.left_vel = -baseAngularWheelSpeed;
-                vel.right_vel = +baseAngularWheelSpeed;
+                vel.left_vel = -baseAngularWheelSpeed/2;
+                vel.right_vel = +baseAngularWheelSpeed/2;
             break;
     }
     if (radian < 0) {

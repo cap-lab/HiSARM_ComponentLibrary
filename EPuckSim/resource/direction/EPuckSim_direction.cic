@@ -1,18 +1,12 @@
 /************************************
  *
- * File : EPucSim_direction.cic
- * Date : Oct 28, 2022 10:46 AM
+ * File : EPuckSim_direction
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include "semo_direction.h"
-
-#define PI 3.14159265358979
-#define MAX_VEL 120*(PI)/180
-
 TASK_CODE_BEGIN
 
 /////////////////////////////////////
@@ -20,15 +14,17 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int direction_group;
-STATIC int direction_port;
-STATIC int wheel_group;
-STATIC int wheel_port;
+static int direction_group;
+static int direction_port;
+static int wheel_group;
+static int wheel_port;
 // ##DEFINE_PORT_SECTION::END
 typedef struct _EPUCK_WHEEL {
     double left_vel;
     double right_vel;
 } EPUCK_WHEEL;
+static int before = -1;
+
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -39,8 +35,6 @@ TASK_INIT
     UFMulticastPort_Initialize(TASK_ID, "direction", &direction_group, &direction_port);
     UFMulticastPort_Initialize(TASK_ID, "wheel", &wheel_group, &wheel_port);
 // ##INIT_PORT_SECTION::END
-    
-    // TODO: task initialize code
 }
 
 
@@ -50,40 +44,47 @@ TASK_INIT
 
 TASK_GO
 {
-    int direction=STOP_;
-    int dataNum;
-    EPUCK_WHEEL vel;
     uem_result result;
-    result = UFMulticastPort_ReadFromBuffer(direction_group, direction_port, (unsigned char *)&direction, sizeof(int), &dataNum);
+    int dataLength;
+    int detect = FALSE;
+    SEMO_MOVE direction;
+    result = UFMulticastPort_ReadFromBuffer(direction_group, direction_port, (unsigned char *) &direction, sizeof(SEMO_MOVE), &dataLength);
     ERRIFGOTO(result, EXIT_);
-    switch(direction) {
-        case STOP_:
-            vel.left_vel = 0;
-            vel.right_vel = 0;
-            break;
-        case FORWARD_:
-            vel.left_vel = MAX_VEL;
-            vel.right_vel = MAX_VEL;
-            break;
-        case BACKWARD_:
-            vel.left_vel = -MAX_VEL;
-            vel.right_vel = -MAX_VEL;
-            break;
-        case RIGHT_:
-            vel.left_vel = MAX_VEL;
-            vel.right_vel = -MAX_VEL;
-            break;
-        case LEFT_:
-            vel.left_vel = -MAX_VEL;
-            vel.right_vel = MAX_VEL;
-            break;
-        default:
-            SEMO_LOG_ERROR("Wheel Control : direction(%d) is not correct.", direction);
-            break;
+    if (dataLength > 0 && direction != before) {
+        EPUCK_WHEEL vel = {0.0, 0.0};
+        switch(direction) {
+            case SEMO_MOVE_FORWARD:
+                vel.left_vel = 2.0;
+                vel.right_vel = 2.0;
+                break;
+            case SEMO_MOVE_RIGHT:
+                vel.left_vel = 2.0;
+                vel.right_vel = -2.0;
+                break;
+            case SEMO_MOVE_LEFT:
+                vel.left_vel = -2.0;
+                vel.right_vel = 2.0;
+                break;
+            case SEMO_MOVE_BACKWARD:
+                vel.left_vel = -2.0;
+                vel.right_vel = -2.0;
+                break;
+            case SEMO_MOVE_STOP:
+                vel.left_vel = 0.0;
+                vel.right_vel = 0.0;
+                break;
+            default:
+                SEMO_LOG_ERROR("Wrong Direction: %d", direction);
+        }
+        if(THIS_ROBOT_ID == 0) 
+            printf("vel %f %f\n", vel.left_vel, vel.right_vel);
+        before = direction;
+        result = UFMulticastPort_WriteToBuffer(wheel_group, wheel_port, (unsigned char *) &vel, sizeof(EPUCK_WHEEL), &dataLength);
     }
-    result = UFMulticastPort_WriteToBuffer(wheel_group, wheel_port, (unsigned char *)&vel, sizeof(EPUCK_WHEEL), &dataNum);
-    if(result != ERR_UEM_NOERROR) {
-        SEMO_LOG_ERROR("communication error(%X)", result);
+
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
     }
 }
 
@@ -94,8 +95,9 @@ TASK_GO
 
 TASK_WRAPUP
 {
-    // TODO: task wrapup code
+    int dataLength;
+    EPUCK_WHEEL vel = {0.0, 0.0};
+    UFMulticastPort_WriteToBuffer(wheel_group, wheel_port, (unsigned char *) &vel, sizeof(EPUCK_WHEEL), &dataLength);
 }
 
 TASK_CODE_END
-

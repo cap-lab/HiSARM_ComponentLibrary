@@ -1,0 +1,128 @@
+/************************************
+ *
+ * File : backToBase
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <random>
+#include <vector>
+#include <chrono>
+#include <iostream>
+#include <cmath>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+static int found_port;
+static int obstacle_group;
+static int obstacle_port;
+static int base_group;
+static int base_port;
+static int direction_group;
+static int direction_port;
+// ##DEFINE_PORT_SECTION::END
+
+using namespace std;
+
+static int count = 0;
+static SEMO_MOVE direction;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFPort_Initialize(TASK_ID, "found", &found_port);
+    UFMulticastPort_Initialize(TASK_ID, "obstacleDetector", &obstacle_group, &obstacle_port);
+    UFMulticastPort_Initialize(TASK_ID, "baseDetector", &base_group, &base_port);
+    UFMulticastPort_Initialize(TASK_ID, "direction", &direction_group, &direction_port);
+
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    direction = SEMO_MOVE_STOP;
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static uem_result setDirection()
+{
+    SEMO_OBSTACLE obstacle;
+    int dataLength;
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(obstacle_group, obstacle_port, (unsigned char *)&obstacle, sizeof(SEMO_OBSTACLE), &dataLength);
+    ERRIFGOTO(result, EXIT_);
+
+    if (dataLength > 0 && (obstacle.front > 0 || obstacle.front_right > 2 || obstacle.front_left > 2)) {
+        //if (obstacle.right  < obstacle.left) {
+            direction = SEMO_MOVE_RIGHT;
+        /*}
+        else {*/
+            direction = SEMO_MOVE_LEFT;
+        //}
+    } else {
+        direction = SEMO_MOVE_FORWARD;
+    }
+    result = UFMulticastPort_WriteToBuffer(direction_group, direction_port, (unsigned char *)&direction, sizeof(SEMO_MOVE), &dataLength);
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+    return result;
+}
+
+static int checkDetect() {
+    int detect;
+    int dataLength;
+    uem_result result;
+    result = UFMulticastPort_ReadFromBuffer(base_group, base_port, (unsigned char *)&detect, sizeof(int), &dataLength);
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+        detect = FALSE;
+    }
+    return detect;
+}
+
+TASK_GO
+{
+    uem_result result;
+    int dataLength;
+
+    if (checkDetect() == TRUE) {
+        int found = TRUE;
+        result = UFPort_WriteToBuffer(found_port, (unsigned char *)&found, sizeof(int), 0, &dataLength);
+        ERRIFGOTO(result, EXIT_);
+        return;
+    }
+
+    result = setDirection();
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    int dataLength;
+    direction = SEMO_MOVE_STOP;
+    UFMulticastPort_WriteToBuffer(direction_group, direction_port, (unsigned char *)&direction, sizeof(SEMO_MOVE), &dataLength);
+}
+
+TASK_CODE_END

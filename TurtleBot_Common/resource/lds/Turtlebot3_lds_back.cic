@@ -1,0 +1,145 @@
+/************************************
+ *
+ * File : Turtlebot3_lds
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <stdio.h>
+#include <chrono>
+#include <thread>
+#include <random>
+
+// ##DEFINE_SECTION::START
+// ##DEFINE_SECTION::END
+
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group;
+STATIC int port;
+// ##DEFINE_PORT_SECTION::END
+
+//for random
+static LiPkg *pkg = NULL;
+static CmdInterfaceLinux cmd_port(8); //lds_version = 8
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+void init_lds(){
+    pkg = new LD08_LiPkg;
+
+    std::vector<std::pair<std::string, std::string>> device_list;
+    std::string port_name;
+    cmd_port.GetCmdDevices(device_list);
+    for (auto n : device_list){
+        // std::cout << n.first << "    " << n.second << std::endl;
+        if (strstr(n.second.c_str(), "CP2102")){
+        port_name = n.first;
+        }
+    }
+    
+    if (port_name.empty() == false){
+        // std::cout << "FOUND LiDAR" << std::endl;
+        cmd_port.SetReadCallback([&pkg](const char *byte, size_t len){
+            if(pkg->Parse((uint8_t*)byte, len)){
+                pkg->AssemblePacket();  
+            } 
+        });
+    }
+    
+    if (cmd_port.Open(port_name)){
+        // std::cout << "LiDAR started successfully " << std::endl;
+    }
+}
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "lds", &group, &port);
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+
+    //////////////////////// init LDS ///////////////////////////
+    init_lds();
+}
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+static bool isFrameReady() {
+    return pkg->IsFrameReady();
+}
+
+static FrameData getFrameData() {
+    return pkg->GetFrameData();
+}
+
+static void getAroundDistance(const FrameData &data, SEMO_DISTANCE *distance){
+    float angle_point = data.angle_min; //1st point's angle
+    float step = (data.angle_max - data.angle_min)/data.len;
+    for (int i = 0; i < (int)data.len; i++){
+
+        if(data.intensities[i]>100){ //if data is reliable
+            if(angle_point <= 22.5 || 337.5 < angle_point){ //front
+                distance->front       = (distance->front       < data.distance[i]) ? distance->front       : data.distance[i];
+            } else if ( 22.5 < angle_point && angle_point <= 67.5){ //front_right
+                distance->front_right = (distance->front_right < data.distance[i]) ? distance->front_right : data.distance[i];
+            } else if ( 67.5 < angle_point && angle_point <= 112.5 ){ //right
+                distance->right       = (distance->right       < data.distance[i]) ? distance->right       : data.distance[i];
+            } else if (112.5 < angle_point && angle_point <= 157.5 ){ //back_right
+                distance->back_right  = (distance->back_right  < data.distance[i]) ? distance->back_right  : data.distance[i];
+            } else if (157.5 < angle_point && angle_point <= 202.5 ){ //back
+                distance->back        = (distance->back        < data.distance[i]) ? distance->back        : data.distance[i];
+            } else if (202.5 < angle_point && angle_point <= 247.5 ){ //back_left
+                distance->back_left   = (distance->back_left   < data.distance[i]) ? distance->back_left   : data.distance[i];
+            } else if (247.5 < angle_point && angle_point <= 292.5 ){ //left
+                distance->left        = (distance->left        < data.distance[i]) ? distance->left        : data.distance[i];
+            } else if (292.5 < angle_point && angle_point <= 337.5 ){ //front_left
+                distance->front_left  = (distance->front_left  < data.distance[i]) ? distance->front_left  : data.distance[i];
+            }
+        }
+        angle_point += step;
+    }
+}
+
+TASK_GO
+{
+    int dataLength;
+    SEMO_DISTANCE lds = {8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000};
+    uem_result result = ERR_UEM_NOERROR;
+
+    // TODO: task main code
+    if (isFrameReady()){
+        FrameData data = getFrameData();
+        getAroundDistance(data, &lds);
+        result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&lds, sizeof(SEMO_DISTANCE), &dataLength);
+    }
+    if(result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("communication error(%X)", result);
+    }
+}
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END

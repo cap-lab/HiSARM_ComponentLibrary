@@ -1,20 +1,13 @@
 /************************************
  *
- * File : checkDistanceByLDS.cic
- * Date : Oct 28, 2022 10:46 AM
+ * File : EPucSim_getSignal
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <iostream>
-#include <cstdlib>
 #include <string>
-#include <cctype>
-#include "semo_direction.h"
-// #include <thread>
-// #include <chrono>
 
 TASK_CODE_BEGIN
 
@@ -23,11 +16,10 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_direction;
-STATIC int group;
-STATIC int port;
+static int group;
+static int port;
 // ##DEFINE_PORT_SECTION::END
-
+static RemoteAPIClientWrapper *simulator;
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -35,11 +27,11 @@ STATIC int port;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "wheel", &group, &port);
-    UFPort_Initialize(TASK_ID, "direction", &port_direction);
+    UFMulticastPort_Initialize(TASK_ID, "getSignal", &group, &port);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
+    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
 }
 
 
@@ -49,13 +41,13 @@ TASK_INIT
 
 TASK_GO
 {
-    int direction=STOP_;
     int dataNum;
-    uem_result result;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&direction, sizeof(int), &dataNum);
-    ERRIFGOTO(result, EXIT_);
-    result = UFPort_WriteToBuffer(port_direction, (unsigned char *)&direction, sizeof(int), 0, &dataNum);
-    ERRIFGOTO(result, EXIT_);
+    int signal = -1;
+    uem_result result = ERR_UEM_NOERROR;
+    if (simulator->get_int32_signal(THIS_ROBOT_NAME, &signal) == TRUE) {
+        result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&signal, sizeof(int), &dataNum);
+        ERRIFGOTO(result, EXIT_);
+    }
 EXIT_:
     if(result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("communication error(%X)", result);

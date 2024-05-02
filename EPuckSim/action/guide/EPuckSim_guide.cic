@@ -1,7 +1,6 @@
 /************************************
  *
- * File : EPucSim_remoteControl.cic
- * Date : Oct 28, 2022 10:46 AM
+ * File : EPucSim_guide
  *
 *************************************/
 
@@ -16,6 +15,8 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 // global definition
 /////////////////////////////////////
+
+#define ARROUND 0.1
 
 // ##DEFINE_PORT_SECTION::START
 static int ret_port;
@@ -61,7 +62,7 @@ TASK_GO
 {
     int result = ERR_UEM_NOERROR;
     int dataLength;
-    if (is_arrived(&ports, points[count]) == TRUE) {
+    if (is_arrived(ARROUND, &ports, points[count]) == TRUE) {
         count++;
         if (count == 2) {
             int ret = 1;

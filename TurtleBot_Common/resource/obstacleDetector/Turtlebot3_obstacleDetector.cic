@@ -1,0 +1,94 @@
+/************************************
+ *
+ * File : Turtlebot3_ObstacleDetector
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+static int lds_group;
+static int lds_port;
+static int obstacle_group;
+static int obstacle_port;
+// ##DEFINE_PORT_SECTION::END
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "lds", &lds_group, &lds_port);
+    UFMulticastPort_Initialize(TASK_ID, "obstacleDetector", &obstacle_group, &obstacle_port);
+// ##INIT_PORT_SECTION::END
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static void checkObstacle(double distance, int *result) {
+    if (distance >= 350) {
+        *result = 0;
+    } else if (distance >= 300) {
+        *result = 1;
+    } else if (distance >= 250) {
+        *result = 2;
+    } else {
+        *result = 3;
+    }
+}
+
+TASK_GO
+{
+    uem_result result;
+    int dataLength;
+    SEMO_OBSTACLE obstacle;
+    SEMO_DISTANCE lds;
+    result = UFMulticastPort_ReadFromBuffer(lds_group, lds_port, (unsigned char *) &lds, sizeof(SEMO_DISTANCE), &dataLength);
+    ERRIFGOTO(result, EXIT_);
+
+    checkObstacle(lds.front, &obstacle.front);
+    SEMO_LOG_INFO("front lds %d obstacle %d", lds.front, obstacle.front);
+    checkObstacle(lds.front_right, &obstacle.front_right);
+    SEMO_LOG_INFO("front right lds %d obstacle %d", lds.front_right, obstacle.front_right);
+    checkObstacle(lds.right, &obstacle.right);
+    //SEMO_LOG_INFO("right lds %d obstacle %d", lds.right, obstacle.right);
+    checkObstacle(lds.back_right, &obstacle.back_right);
+    //SEMO_LOG_INFO("back right lds %d obstacle %d", lds.back_right, obstacle.back_right);
+    checkObstacle(lds.back, &obstacle.back);
+    //SEMO_LOG_INFO("back lds %d obstacle %d", lds.back, obstacle.back);
+    checkObstacle(lds.back_left, &obstacle.back_left);
+    //SEMO_LOG_INFO("back left lds %d obstacle %d", lds.back_left, obstacle.back_left);
+    checkObstacle(lds.left, &obstacle.left);
+    //SEMO_LOG_INFO("left lds %d obstacle %d", lds.left, obstacle.left);
+    checkObstacle(lds.front_left, &obstacle.front_left);
+    SEMO_LOG_INFO("front left lds %d obstacle %d", lds.front_left, obstacle.front_left);
+
+    result = UFMulticastPort_WriteToBuffer(obstacle_group, obstacle_port, (unsigned char *) &obstacle, sizeof(SEMO_OBSTACLE), &dataLength);
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+
+}
+
+TASK_CODE_END

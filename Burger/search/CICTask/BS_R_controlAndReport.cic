@@ -89,10 +89,10 @@ TASK_GO
     UFPort_ReadFromBuffer(port_color, (unsigned char *)&color, sizeof(int), 0 , &dataLength);
     UFPort_ReadFromQueue(port_distance, (unsigned char *)&distance, sizeof(int), 0 , &dataLength);
     if (isFound == 0){
-        std::string robotName = THIS_ROBOT_NAME;
+        /*std::string robotName = THIS_ROBOT_NAME;
         if(robotName.compare("Burger_1")){ // Because Burger shows a different color sensor value, target value is modified to detect the same color of other robots
             target += 2;
-        }
+        }*/
 
         if (color == target){
             count++;

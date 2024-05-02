@@ -1,0 +1,71 @@
+/************************************
+ *
+ * File : Turtlebot3_MineralDetector
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+TASK_CODE_BEGIN
+#include "semo_color.h"
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+static int color_group;
+static int color_port;
+static int mineral_group;
+static int mineral_port;
+// ##DEFINE_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "color", &color_group, &color_port);
+    UFMulticastPort_Initialize(TASK_ID, "mineralDetector", &mineral_group, &mineral_port);
+// ##INIT_PORT_SECTION::END
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    uem_result result;
+    int dataLength;
+    int detect = FALSE;
+    SEMO_COLOR color;
+    result = UFMulticastPort_ReadFromBuffer(color_group, color_port, (unsigned char *) &color, sizeof(SEMO_COLOR), &dataLength);
+    ERRIFGOTO(result, EXIT_);
+
+    if (color == SEMO_YELLOW) {
+        detect = TRUE;
+    }
+
+    result = UFMulticastPort_WriteToBuffer(mineral_group, mineral_port, (unsigned char *) &detect, sizeof(int), &dataLength);
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+
+}
+
+TASK_CODE_END

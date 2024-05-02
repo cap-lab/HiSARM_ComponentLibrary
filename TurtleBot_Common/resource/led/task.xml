@@ -5,10 +5,10 @@
     <setting cycle="0" unit="s" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="DataFlow" />
   </setting_list>
   <task_list>
-    <task name="R_led" type="Computational">
+    <task name="Turtlebot3_led_raspberrypi" type="Computational">
       <config>
         <location x="176" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="CL_R_led.cic" />
+        <parameter name="CICFile" value="Turtlebot3_led_raspberrypi.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="50" />
@@ -52,10 +52,10 @@
         <hardware Architecture="arm" Platform="Linux" Runtime="Native" ProcessorType="CPU" />
       </HardwareDependency>
     </task>
-    <task name="O_led" type="Computational">
+    <task name="Turtlebot3_led_opencr" type="Computational">
       <config>
         <location x="488" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="CL_O_led.cic" />
+        <parameter name="CICFile" value="Turtlebot3_led_opencr.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="50" />
@@ -100,7 +100,7 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="R_led" src_port="ledToOpenCR" dst_task="O_led" dst_port="led" size="1" init_size="0" sampleType="" sampleSize="8">
+    <channel src_task="Turtlebot3_led_raspberrypi" src_port="ledToOpenCR" dst_task="Turtlebot3_led_opencr" dst_port="led" size="1" init_size="0" sampleType="" sampleSize="8">
       <edge_list>
         <edge id="0" x="256" y="148" />
         <edge id="1" x="488" y="148" />

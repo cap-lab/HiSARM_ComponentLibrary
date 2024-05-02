@@ -1,0 +1,90 @@
+/************************************
+ *
+ * File : EPuckSim_ObstacleDetector
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+static int proximity_group;
+static int proximity_port;
+static int obstacle_group;
+static int obstacle_port;
+// ##DEFINE_PORT_SECTION::END
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "proximity", &proximity_group, &proximity_port);
+    UFMulticastPort_Initialize(TASK_ID, "obstacleDetector", &obstacle_group, &obstacle_port);
+// ##INIT_PORT_SECTION::END
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static void checkObstacle(double distance, int *result) {
+    if (distance > 0.0) {
+        if (distance >= 0.35) {
+            *result = 0;
+        } else if (distance >= 0.3) {
+            *result = 1;
+        } else if (distance >= 0.25) {
+            *result = 2;
+        } else {
+            *result = 3;
+        }
+    } else {
+        *result = 0;
+    }
+}
+
+TASK_GO
+{
+    uem_result result;
+    int dataLength;
+    SEMO_OBSTACLE obstacle;
+    double proximityValue[8]; // PI/2, PI/4, PI/12, -PI/12, -PI/4, -PI/2, -3*PI/4, 3*PI/4
+    result = UFMulticastPort_ReadFromBuffer(proximity_group, proximity_port, (unsigned char *) &proximityValue, sizeof(double) * 8, &dataLength);
+    ERRIFGOTO(result, EXIT_);
+
+    checkObstacle((proximityValue[2] + proximityValue[3])/2.0, &obstacle.front);
+    checkObstacle(proximityValue[4], &obstacle.front_right);
+    checkObstacle(proximityValue[5], &obstacle.right);
+    checkObstacle(proximityValue[6], &obstacle.back_right);
+    checkObstacle((proximityValue[6] + proximityValue[7])/2.0, &obstacle.back);
+    checkObstacle(proximityValue[7], &obstacle.back_left);
+    checkObstacle(proximityValue[0], &obstacle.left);
+    checkObstacle(proximityValue[1], &obstacle.front_left);
+
+    result = UFMulticastPort_WriteToBuffer(obstacle_group, obstacle_port, (unsigned char *) &obstacle, sizeof(SEMO_OBSTACLE), &dataLength);
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+
+}
+
+TASK_CODE_END

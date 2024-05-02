@@ -5,15 +5,15 @@
     <setting cycle="0" unit="s" FuncTarget="PTHREAD" ThreadSetting="MULTI_THREAD" TaskGraphProperty="DataFlow" />
   </setting_list>
   <task_list>
-    <task name="O_color" type="Computational">
+    <task name="Turtlebot3_color_opencr" type="Computational">
       <config>
         <location x="176" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="BC_O_color.cic" />
+        <parameter name="CICFile" value="Turtlebot3_color_opencr.cic" />
         <parameter name="RunCondition" value="time-driven" />
         <parameter name="HasInternalStates" value="Yes" />
-        <parameter name="Deadline" value="50" />
+        <parameter name="Deadline" value="20" />
         <parameter name="DeadlineUnit" value="ms" />
-        <parameter name="Period" value="50" />
+        <parameter name="Period" value="20" />
         <parameter name="PeriodUnit" value="ms" />
         <parameter name="Priority" value="1" />
         <parameter name="Language" value="C++" />
@@ -48,10 +48,10 @@
         <hardware Architecture="arm" Platform="Arduino" Runtime="Native" ProcessorType="CPU" />
       </HardwareDependency>
     </task>
-    <task name="R_color" type="Computational">
+    <task name="Turtlebot3_color_raspberrypi" type="Computational">
       <config>
         <location x="488" y="128" width="80" height="40" />
-        <parameter name="CICFile" value="BC_R_color.cic" />
+        <parameter name="CICFile" value="Turtlebot3_color_raspberrypi.cic" />
         <parameter name="RunCondition" value="data-driven" />
         <parameter name="HasInternalStates" value="Yes" />
         <parameter name="Deadline" value="50" />
@@ -98,7 +98,7 @@
   </task_list>
   <library_list />
   <channel_list>
-    <channel src_task="O_color" src_port="color" dst_task="R_color" dst_port="colorFromOpenCR" size="1" init_size="0" sampleType="" sampleSize="4">
+    <channel src_task="Turtlebot3_color_opencr" src_port="color" dst_task="Turtlebot3_color_raspberrypi" dst_port="colorFromOpenCR" size="1" init_size="0" sampleType="" sampleSize="4">
       <edge_list>
         <edge id="0" x="256" y="148" />
         <edge id="1" x="488" y="148" />

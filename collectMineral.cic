@@ -1,28 +1,28 @@
 /************************************
  *
- * File : checkDistanceByLDS.cic
- * Date : Oct 28, 2022 10:46 AM
+ * File : collectMineral
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-// #include <thread>
-// #include <chrono>
 
 TASK_CODE_BEGIN
+#include <thread>
+#include <chrono>
 
 /////////////////////////////////////
 // global definition
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_color;
-STATIC int group;
-STATIC int port;
+static int ledControl_group;
+static int ledControl_port;
+static int ret_port;
 // ##DEFINE_PORT_SECTION::END
 
+#define COLLECT_TIME 5
 
 /////////////////////////////////////
 // init code
@@ -31,8 +31,9 @@ STATIC int port;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "color", &group, &port);
-    UFPort_Initialize(TASK_ID, "colorFromOpenCR", &port_color);
+    UFPort_Initialize(TASK_ID, "result", &ret_port);
+    UFMulticastPort_Initialize(TASK_ID, "ledControl", &ledControl_group, &ledControl_port);
+
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
@@ -42,29 +43,23 @@ TASK_INIT
 /////////////////////////////////////
 // go code
 /////////////////////////////////////
-static int convertColor(int before) {
-    switch(before) {
-        case 6:
-            return SEMO_YELLOW;
-        default:
-            return before;
-    }
-}
 
 TASK_GO
 {
-    int color;
-    int dataNum;
     uem_result result;
-    result = UFPort_ReadFromQueue(port_color, (unsigned char *)&color, sizeof(int), 0, &dataNum);
+    int dataLength;
+    int command = TRUE;
+    int ret=TRUE;
+
+    std::this_thread::sleep_for(std::chrono::seconds(COLLECT_TIME));
+    
+    result = UFMulticastPort_WriteToBuffer(ledControl_group, ledControl_port, (unsigned char*) &command, sizeof(int), &dataLength);
     ERRIFGOTO(result, EXIT_);
-    color = convertColor(color);
-    SEMO_LOG_DEBUG("color %d", before);
-    result = UFMulticastPort_WriteToBuffer(group, port, (unsigned char *)&color, sizeof(int), &dataNum);
+    result = UFPort_WriteToBuffer(ret_port, (unsigned char *)&ret, sizeof(int), 0, &dataLength);
     ERRIFGOTO(result, EXIT_);
 EXIT_:
-    if(result != ERR_UEM_NOERROR) {
-        SEMO_LOG_ERROR("communication error(%X)", result);
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
     }
 }
 
@@ -75,7 +70,7 @@ EXIT_:
 
 TASK_WRAPUP
 {
-    // TODO: task wrapup code
+
 }
 
 TASK_CODE_END

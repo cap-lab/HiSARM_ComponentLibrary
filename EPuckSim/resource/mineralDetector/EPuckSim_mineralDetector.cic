@@ -1,17 +1,12 @@
 /************************************
  *
- * File : checkDistanceByLDS.cic
- * Date : Oct 28, 2022 10:46 AM
+ * File : EPuckSim_MineralDetector
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include "semo_led.h"
-// #include <thread>
-// #include <chrono>
-
 TASK_CODE_BEGIN
 
 /////////////////////////////////////
@@ -19,11 +14,11 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int port_led;
-STATIC int group;
-STATIC int port;
+static int signal_group;
+static int signal_port;
+static int mineral_group;
+static int mineral_port;
 // ##DEFINE_PORT_SECTION::END
-
 
 /////////////////////////////////////
 // init code
@@ -32,11 +27,9 @@ STATIC int port;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "led", &group, &port);
-    UFPort_Initialize(TASK_ID, "ledToOpenCR", &port_led);
+    UFMulticastPort_Initialize(TASK_ID, "getSignal", &signal_group, &signal_port);
+    UFMulticastPort_Initialize(TASK_ID, "mineralDetector", &mineral_group, &mineral_port);
 // ##INIT_PORT_SECTION::END
-    
-    // TODO: task initialize code
 }
 
 
@@ -46,16 +39,21 @@ TASK_INIT
 
 TASK_GO
 {
-    SEMO_LED led;
-    int dataNum;
     uem_result result;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&led, sizeof(SEMO_LED), &dataNum);
+    int dataLength;
+    int detect = FALSE;
+    int signal;
+    result = UFMulticastPort_ReadFromBuffer(signal_group, signal_port, (unsigned char *) &signal, sizeof(int), &dataLength);
     ERRIFGOTO(result, EXIT_);
-    result = UFPort_WriteToBuffer(port_led, (unsigned char *)&led, sizeof(SEMO_LED), 0, &dataNum);
-    ERRIFGOTO(result, EXIT_);
+
+    if (signal == 2) {
+        detect = TRUE;
+    }
+
+    result = UFMulticastPort_WriteToBuffer(mineral_group, mineral_port, (unsigned char *) &detect, sizeof(int), &dataLength);
 EXIT_:
-    if(result != ERR_UEM_NOERROR) {
-        SEMO_LOG_ERROR("communication error(%X)", result);
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
     }
 }
 
@@ -66,7 +64,7 @@ EXIT_:
 
 TASK_WRAPUP
 {
-    // TODO: task wrapup code
+
 }
 
 TASK_CODE_END

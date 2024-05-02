@@ -1,0 +1,115 @@
+/************************************
+ *
+ * File : Turtlebot3Burger_direction
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include "semo_direction.h"
+
+// ##DEFINE_SECTION::START
+
+#define MAX_LINEAR_VELOCITY 0.22
+#define MAX_ANGULAR_VELOCITY 2.84
+#define MIN_LINEAR_VELOCITY              -MAX_LINEAR_VELOCITY  
+#define MIN_ANGULAR_VELOCITY             -MAX_ANGULAR_VELOCITY 
+#define INITIAL_LINEAR_X (MAX_LINEAR_VELOCITY/3)
+#define INITIAL_ANGULAR_Z (MAX_ANGULAR_VELOCITY)
+// ##DEFINE_SECTION::END
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+STATIC int group_wheel;
+STATIC int port_wheel;
+STATIC int group_direction;
+STATIC int port_direction;
+// ##DEFINE_PORT_SECTION::END
+
+typedef struct _ControlVelocity{
+    double linear_x;
+    double angular_z;
+} ControlVelocity;
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "direction", &group_direction, &port_direction);
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &group_wheel, &port_wheel);
+// ##INIT_PORT_SECTION::END
+
+    // TODO: task initialize code
+}
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+static void convertDToV_Burger(const int direction, ControlVelocity *vel){
+    switch(direction)
+    {        
+        case SEMO_MOVE_STOP:
+            vel->linear_x = 0;
+            vel->angular_z = 0;
+            printf("merong2 to stop\n");
+            break;
+        case SEMO_MOVE_BACKWARD:
+            vel->linear_x = -1 * INITIAL_LINEAR_X;
+            vel->angular_z = 0;
+            break;
+        case SEMO_MOVE_FORWARD:
+            vel->linear_x = INITIAL_LINEAR_X;
+            vel->angular_z = 0;
+            break;
+        case SEMO_MOVE_RIGHT:
+            vel->linear_x = 0;
+            vel->angular_z = -1 * INITIAL_ANGULAR_Z/7;
+            break;
+        case SEMO_MOVE_LEFT:
+            vel->linear_x = 0;
+            vel->angular_z = INITIAL_ANGULAR_Z/7;
+            break;   
+        default:
+            SEMO_LOG_ERROR("direction is not correct, %d", direction);
+            break;
+    }
+}
+TASK_GO
+{
+    // TODO: task main code
+    int dataLength;
+    uem_result result;
+    ControlVelocity vel;
+    int direction = SEMO_MOVE_STOP;
+
+    result = UFMulticastPort_ReadFromBuffer(group_direction, port_direction, (unsigned char *)&direction, sizeof(int), &dataLength);
+ 
+    convertDToV_Burger(direction, &vel);
+
+    result = UFMulticastPort_WriteToBuffer(group_wheel, port_wheel, (unsigned char *) &vel, sizeof(ControlVelocity), &dataLength);
+}
+
+
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+
+}
+
+TASK_CODE_END
+

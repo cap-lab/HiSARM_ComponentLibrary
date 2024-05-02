@@ -1,0 +1,70 @@
+/************************************
+ *
+ * File : EPuckSim_baseDetector
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+static int signal_group;
+static int signal_port;
+static int base_group;
+static int base_port;
+// ##DEFINE_PORT_SECTION::END
+
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFMulticastPort_Initialize(TASK_ID, "getSignal", &signal_group, &signal_port);
+    UFMulticastPort_Initialize(TASK_ID, "baseDetector", &base_group, &base_port);
+// ##INIT_PORT_SECTION::END
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    uem_result result;
+    int dataLength;
+    int detect = FALSE;
+    int signal;
+    result = UFMulticastPort_ReadFromBuffer(signal_group, signal_port, (unsigned char *) &signal, sizeof(int), &dataLength);
+    ERRIFGOTO(result, EXIT_);
+
+    if (signal == 1) {
+        detect = TRUE;
+    }
+
+    result = UFMulticastPort_WriteToBuffer(base_group, base_port, (unsigned char *) &detect, sizeof(int), &dataLength);
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+
+}
+
+TASK_CODE_END
