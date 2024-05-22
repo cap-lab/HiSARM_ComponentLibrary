@@ -3,7 +3,7 @@
 
 #include "semo_common.h"
 
-typedef struct _EPUCKSIM_MOVE_PORTS {
+typedef struct _MOVE_PORTS {
     int robot_id;
     int position_group;
     int position_port;
@@ -13,11 +13,11 @@ typedef struct _EPUCKSIM_MOVE_PORTS {
     int proximity_port;
     int wheel_group;
     int wheel_port;
-} EPUCKSIM_MOVE_PORTS;
+} MOVE_PORTS;
 
 void move_init(int *turning_mechanism);
-void move_to_target(EPUCKSIM_MOVE_PORTS *ports, int *turning_mechanism, double *target);
-semo_int8 is_arrived(double arround, EPUCKSIM_MOVE_PORTS *ports, double *target);
-void move_wrapup(EPUCKSIM_MOVE_PORTS *ports);
+void move_to_target(MOVE_PORTS *ports, int *turning_mechanism, double *target);
+semo_int8 is_arrived(double arround, MOVE_PORTS *ports, double *target);
+void move_wrapup(MOVE_PORTS *ports);
 
 #endif

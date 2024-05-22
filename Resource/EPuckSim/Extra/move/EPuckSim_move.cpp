@@ -74,7 +74,7 @@ static void getVectorFromRadianAndLength(double radian, double length, double *v
     vector[1] = sin(radian) * length;
 }
 
-static void diffusionVector(EPUCKSIM_MOVE_PORTS *ports, int *collision, double *vector)
+static void diffusionVector(MOVE_PORTS *ports, int *collision, double *vector)
 {
     double proximityValue[8];
     double tempVector[2] = {0, 0};
@@ -105,7 +105,7 @@ static double getDistance(double *point1, double *point2)
 	return sqrt(pow(point1[0] - point2[0], 2) + pow(point1[1] - point2[1], 2));
 }
 
-semo_int8 is_arrived(double arround, EPUCKSIM_MOVE_PORTS *ports, double *target)
+semo_int8 is_arrived(double arround, MOVE_PORTS *ports, double *target)
 {
     double position[3];
     int dataLength;
@@ -122,7 +122,7 @@ EXIT_:
     return FALSE;
 }
 
-static uem_result vectorToTarget(EPUCKSIM_MOVE_PORTS *ports, double *targetPoint, double *position, double *vector)
+static uem_result vectorToTarget(MOVE_PORTS *ports, double *targetPoint, double *position, double *vector)
 {
     double targetRadian;
     uem_result result;
@@ -141,7 +141,7 @@ static uem_result vectorToTarget(EPUCKSIM_MOVE_PORTS *ports, double *targetPoint
 EXIT_:
     return result;
 }
-static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turningMechanism, double *vector)
+static uem_result setWheelSpeedFromVector(MOVE_PORTS *ports, int *turningMechanism, double *vector)
 {
     int dataNum;
     double radian;
@@ -193,7 +193,7 @@ static uem_result setWheelSpeedFromVector(EPUCKSIM_MOVE_PORTS *ports, int *turni
     return UFMulticastPort_WriteToBuffer(ports->wheel_group, ports->wheel_port, (unsigned char *)&vel, sizeof(EPUCK_WHEEL), &dataNum);
 }
 
-void move_to_target(EPUCKSIM_MOVE_PORTS *ports, int *turning_mechanism, double *targetPoint)
+void move_to_target(MOVE_PORTS *ports, int *turning_mechanism, double *targetPoint)
 {
     int result;
     int dataLength;
@@ -222,7 +222,7 @@ EXIT_:
     }
 }
 
-void move_wrapup(EPUCKSIM_MOVE_PORTS *ports)
+void move_wrapup(MOVE_PORTS *ports)
 {
     // TODO: task wrapup code
     EPUCK_WHEEL vel = {0, 0};
