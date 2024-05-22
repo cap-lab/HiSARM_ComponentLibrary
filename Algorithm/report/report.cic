@@ -1,14 +1,12 @@
 /************************************
  *
- * File : EPucSim_SetSignal
+ * File : report
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include <string>
-
 TASK_CODE_BEGIN
 
 /////////////////////////////////////
@@ -16,11 +14,9 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-static int group;
-static int port;
+static int group_port;
 // ##DEFINE_PORT_SECTION::END
-static RemoteAPIClientWrapper *simulator;
-static int before = -1;
+
 /////////////////////////////////////
 // init code
 /////////////////////////////////////
@@ -28,32 +24,27 @@ static int before = -1;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "sendSignal", &group, &port);
+    UFPort_Initialize(TASK_ID, "group", &group_port);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
-    simulator = new RemoteAPIClientWrapper(SEMO_SIMULATOR_IP, SEMO_SIMULATOR_PORT, THIS_ROBOT_ID);
 }
 
 
 /////////////////////////////////////
 // go code
 /////////////////////////////////////
-
 TASK_GO
 {
-    int dataNum;
-    int detect = -1;
-    uem_result result = ERR_UEM_NOERROR;
-    result = UFMulticastPort_ReadFromBuffer(group, port, (unsigned char *)&detect, sizeof(int), &dataNum);
+    int group;
+    int dataLength;
+    uem_result result;
+    result = UFPort_ReadFromBuffer(group_port, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     ERRIFGOTO(result, EXIT_);
-    if (dataNum > 0 && before != detect) {
-        simulator->set_int32_signal(THIS_ROBOT_NAME, detect);
-        before = detect;
-    }
+    SEMO_LOG_DEBUG("Monitoring: group %d, robot %d", group, THIS_ROBOT_ID);
 EXIT_:
-    if(result != ERR_UEM_NOERROR) {
-        SEMO_LOG_ERROR("communication error(%X)", result);
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
     }
 }
 
@@ -64,8 +55,7 @@ EXIT_:
 
 TASK_WRAPUP
 {
-    // TODO: task wrapup code
-    simulator->set_int32_signal(THIS_ROBOT_NAME, -1);
 }
 
 TASK_CODE_END
+

@@ -27,7 +27,7 @@ static int led_group;
 static int led_port;
 static int signal_group;
 static int signal_port;
-static EPUCKSIM_MOVE_PORTS ports;
+static MOVE_PORTS ports;
 static int turning_mechanism;
 // ##DEFINE_PORT_SECTION::END
 
@@ -69,7 +69,7 @@ TASK_INIT
     UFPort_Initialize(TASK_ID, "room", &room_port);
     UFMulticastPort_Initialize(TASK_ID, "detectItem", &detect_group, &detect_port);
     UFMulticastPort_Initialize(TASK_ID, "led", &led_group, &led_port);
-    UFMulticastPort_Initialize(TASK_ID, "signal", &signal_group, &signal_port);
+    UFMulticastPort_Initialize(TASK_ID, "sendSignal", &signal_group, &signal_port);
     UFMulticastPort_Initialize(TASK_ID, "position", &ports.position_group, &ports.position_port);
     UFMulticastPort_Initialize(TASK_ID, "orientation", &ports.orientation_group, &ports.orientation_port);
     UFMulticastPort_Initialize(TASK_ID, "proximity", &ports.proximity_group, &ports.proximity_port);

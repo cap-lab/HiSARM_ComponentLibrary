@@ -34,7 +34,7 @@ typedef struct _EPUCK_LED {
     double blue;
 } EPUCK_LED;
 
-static EPUCKSIM_MOVE_PORTS ports;
+static MOVE_PORTS ports;
 static int turning_mechanism;
 
 static double target[2] = {0.0, 0.0};

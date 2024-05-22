@@ -21,7 +21,7 @@ TASK_CODE_BEGIN
 // ##DEFINE_PORT_SECTION::START
 static int target_port;
 static int ret_port;
-static EPUCKSIM_MOVE_PORTS ports;
+static MOVE_PORTS ports;
 static int turning_mechanism;
 // ##DEFINE_PORT_SECTION::END
 
