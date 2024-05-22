@@ -1,0 +1,92 @@
+/************************************
+ *
+ * File : escape
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <cmath>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+#define ARROUND 0.1
+
+// ##DEFINE_PORT_SECTION::START
+static int ret_port;
+static EPUCKSIM_MOVE_PORTS ports;
+static int turning_mechanism;
+// ##DEFINE_PORT_SECTION::END
+
+static double points[2][2] = {
+    {0.425, -1.65},
+    {-1.950, -1.65},
+};
+
+static int count=0;
+
+using namespace std;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFPort_Initialize(TASK_ID, "arrived", &ret_port);
+    UFMulticastPort_Initialize(TASK_ID, "position", &ports.position_group, &ports.position_port);
+    UFMulticastPort_Initialize(TASK_ID, "orientation", &ports.orientation_group, &ports.orientation_port);
+    UFMulticastPort_Initialize(TASK_ID, "proximity", &ports.proximity_group, &ports.proximity_port);
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &ports.wheel_group, &ports.wheel_port);
+    move_init(&turning_mechanism);
+
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    count = 0;
+    
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+TASK_GO
+{
+    int result = ERR_UEM_NOERROR;
+    int dataLength;
+    if (is_arrived(ARROUND, &ports, points[count]) == TRUE) {
+        count++;
+        if (count == 2) {
+            int ret = 1;
+            result = UFPort_WriteToBuffer(ret_port, (unsigned char *)&ret, sizeof(int), 0, &dataLength);
+            ERRIFGOTO(result, EXIT_);
+            return;
+        }
+    }
+    move_to_target(&ports, &turning_mechanism, points[count]);
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+    move_wrapup(&ports);
+}
+
+TASK_CODE_END

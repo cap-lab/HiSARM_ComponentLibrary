@@ -1,0 +1,404 @@
+/************************************
+ *
+ * File : makeEvacuationPath
+ *
+*************************************/
+
+/////////////////////////////////////
+// include header section
+/////////////////////////////////////
+#include <iostream>
+#include <cmath>
+
+TASK_CODE_BEGIN
+
+/////////////////////////////////////
+// global definition
+/////////////////////////////////////
+
+// ##DEFINE_PORT_SECTION::START
+static int group_port;
+static int position_group;
+static int position_port;
+static int orientation_group;
+static int orientation_port;
+static int wheel_group;
+static int wheel_port;
+static int ultrasonic_group;
+static int ultrasonic_port;
+// ##DEFINE_PORT_SECTION::END
+
+#define PI 3.14159265358979
+#define MAX_VEL 3.0
+#define SCALE_VEL 2.0
+#define POINT_NUM 3
+
+static double points[3][2] = {
+    {0.85, -0.85},
+    {0.85, -2.1},
+    {-2.1, -2.1}
+};
+
+enum turning {
+    NO_TURN,
+    SOFT_TURN,
+    HARD_TURN,
+	BACK
+};
+
+enum ROLE_STATE {
+    ROLE_FINISH,
+    ROLE_ALLOCATION
+};
+
+typedef struct _P3DX_WHEEL {
+    double left_vel;
+    double right_vel;
+} P3DX_WHEEL;
+
+using namespace std;
+
+static int myRole;
+static int myState;
+static int beforeLeaderId;
+static int robotNum;
+static int robotId[10];
+static int count = 0;
+static int turningMechanism = NO_TURN;
+/////////////////////////////////////
+// init code
+/////////////////////////////////////
+
+TASK_INIT
+{
+// ##INIT_PORT_SECTION::START
+    UFPort_Initialize(TASK_ID, "group", &group_port);
+    UFMulticastPort_Initialize(TASK_ID, "wheel", &wheel_group, &wheel_port);
+    UFMulticastPort_Initialize(TASK_ID, "position", &position_group, &position_port);
+    UFMulticastPort_Initialize(TASK_ID, "orientation", &orientation_group, &orientation_port);
+    UFMulticastPort_Initialize(TASK_ID, "ultrasonic", &ultrasonic_group, &ultrasonic_port);
+
+// ##INIT_PORT_SECTION::END
+    
+    // TODO: task initialize code
+    count = 0;
+    myRole = -1;
+    myState = ROLE_FINISH;
+    beforeLeaderId = -1;
+    robotNum = 0;
+    turningMechanism = NO_TURN;
+}
+
+
+/////////////////////////////////////
+// go code
+/////////////////////////////////////
+
+static double eulerOrientationToRadian(double *orientation)
+{
+    double radian;
+    radian = orientation[2];
+    return radian;
+}
+
+static double signedNormalize(double radian){
+    while(radian > PI) {
+        radian -= 2*PI;
+    }
+    while(radian < -PI) {
+        radian += 2*PI;
+    }
+    return radian;
+}
+
+static double vectorToRadian(double *vector)
+{
+    return atan2(vector[1], vector[0]);
+}
+
+static void vectorSum(double *vector1, double *vector2, double *vector)
+{
+    vector[0] = vector1[0] + vector2[0];
+    vector[1] = vector1[1] + vector2[1];
+}
+
+static double lengthOfVector(double *vector)
+{
+    return sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
+}
+
+static void getVectorFromRadianAndLength(double radian, double length, double *vector)
+{
+    vector[0] = cos(radian) * length;
+    vector[1] = sin(radian) * length;
+}
+
+static int aroundPoint(double *point, double *position)
+{
+    if (position[0] >= point[0] - 0.5 && position[0] <= point[0] + 0.5 &&
+        position[1] >= point[1] - 0.5 && position[1] <= point[1] + 0.5) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+static uem_result vectorToTarget(double *targetPoint, double *position, double *vector)
+{
+    double targetRadian;
+    uem_result result;
+    double currentOrientation[3];
+    int dataLength;
+    result = UFMulticastPort_ReadFromBuffer(orientation_group, orientation_port, (unsigned char *)currentOrientation, sizeof(double) * 3, &dataLength);
+    vector[0] = targetPoint[0] - position[0];
+    vector[1] = targetPoint[1] - position[1];
+    targetRadian = vectorToRadian(vector);
+    if (currentOrientation[2] > 2*PI || currentOrientation[2] < -2*PI){
+        getVectorFromRadianAndLength(signedNormalize(targetRadian), 1, vector);
+    } else {
+        getVectorFromRadianAndLength(signedNormalize(targetRadian-eulerOrientationToRadian(currentOrientation)), 1, vector);
+    }
+    return result;
+}
+
+static void diffusionVector(int *collision, double *vector)
+{
+    double ultrasonicValue[16];
+    double tempVector[2] = {0, 0};
+    double ultrasonicRadians[16] = {PI/2, PI*5/14, PI*3/14, PI*1/14, -PI*1/14, -PI*3/14, -PI*5/14, -PI/2, -PI/2, -PI*9/14, -PI*11/14, -PI*13/14, PI*13/14, PI*11/14, PI*9/14, PI/2};
+    int dataLength;
+    *collision = FALSE;
+    UFMulticastPort_ReadFromBuffer(ultrasonic_group, ultrasonic_port, (unsigned char *)ultrasonicValue, sizeof(double) * 16, &dataLength);
+    for (int i=0 ; i < 16 ; i++){
+        double temp[2] = {0, 0};
+        if(ultrasonicValue[i] >  0.0) {
+			*collision = true;
+            getVectorFromRadianAndLength(ultrasonicRadians[i], 0.15-ultrasonicValue[i], temp);
+        }
+		vectorSum(tempVector, temp, tempVector);
+    }
+    if(*collision == TRUE) {
+        vector[0] = -tempVector[0]/0.15;
+        vector[1] = -tempVector[1]/0.15;
+    } else {
+        *collision = FALSE;
+        vector[0] = 0;
+        vector[1] = 0;
+    }
+}
+
+static uem_result setWheelSpeedFromVector(double *vector, int collision)
+{
+    int dataNum;
+    double radian;
+    double baseAngularWheelSpeed;
+    radian = signedNormalize(vectorToRadian(vector));
+    baseAngularWheelSpeed = MAX_VEL;
+    if(turningMechanism == BACK) {
+	   if(fabs(radian) <= PI*2/3 || collision == FALSE) {
+          turningMechanism = HARD_TURN;
+	   }
+       if(fabs(radian) <= PI/3) {
+          turningMechanism = SOFT_TURN;
+       }
+       if(fabs(radian) <= PI/8) {
+          turningMechanism = NO_TURN;
+       }
+	}
+    else if(turningMechanism == HARD_TURN) {
+       if(fabs(radian) > PI*3/4 && collision == TRUE) {
+          turningMechanism = BACK;
+	   }
+       if(fabs(radian) <= PI/3) {
+          turningMechanism = SOFT_TURN;
+       }
+       if(fabs(radian) <= PI/8) {
+          turningMechanism = NO_TURN;
+       }
+    }
+    else if(turningMechanism == SOFT_TURN) {
+       if(fabs(radian) > PI/2) {
+          turningMechanism = HARD_TURN;
+       }
+       if(fabs(radian) > PI*3/4 && collision == TRUE) {
+          turningMechanism = BACK;
+	   }
+       if(fabs(radian) <= PI/8) {
+          turningMechanism = NO_TURN;
+       }
+    }
+    else if(turningMechanism == NO_TURN) {
+       if(fabs(radian) > PI/8) {
+          turningMechanism = SOFT_TURN;
+       }    
+       if(fabs(radian) > PI/2) {
+          turningMechanism = HARD_TURN;
+       }
+       if(fabs(radian) > PI*3/4 && collision == TRUE) {
+          turningMechanism = BACK;
+	   }
+	}
+    P3DX_WHEEL vel;
+    switch(turningMechanism){
+        case NO_TURN:
+            vel.left_vel = baseAngularWheelSpeed;
+            vel.right_vel = baseAngularWheelSpeed;
+            break;
+        case SOFT_TURN:
+            vel.left_vel = baseAngularWheelSpeed/2 - baseAngularWheelSpeed * (fabs(radian) / PI);
+            vel.right_vel = baseAngularWheelSpeed/2 + baseAngularWheelSpeed * (fabs(radian) / PI);
+            break;
+        case HARD_TURN:
+            vel.left_vel = -baseAngularWheelSpeed;
+            vel.right_vel = +baseAngularWheelSpeed;
+            break;
+	    case BACK:
+            vel.left_vel = -1;
+            vel.right_vel = -1;
+			break;
+    }
+    if (radian < 0) {
+        double temp;
+        temp = vel.right_vel;
+        vel.right_vel = vel.left_vel;
+        vel.left_vel = temp;
+    }
+    return UFMulticastPort_WriteToBuffer(wheel_group, wheel_port, (unsigned char *)&vel, sizeof(P3DX_WHEEL), &dataNum);
+}
+
+uem_result allocateRole() {
+    uem_result result;
+    int dataLength;
+    int leaderId = -1;
+    int leaderState;
+    int group;
+
+    result = UFPort_ReadFromBuffer(group_port, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
+    ERRIFGOTO(result, EXIT_);
+
+    // get leader
+    if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED) {
+        leaderId = LIBCALL(leader, get_leader, group);
+    } else {
+        return result;
+    }
+    if (leaderId == THIS_ROBOT_ID) {
+        if (leaderId != beforeLeaderId) {
+            leaderState = ROLE_ALLOCATION;
+            LIBCALL(state, set_shared_data_action, &leaderState);
+        }
+    }
+    beforeLeaderId = leaderId;
+
+    // allocate role
+    LIBCALL(state, get_specific_shared_data_action, leaderId, &leaderState);
+    if (leaderState == ROLE_ALLOCATION) {
+        if (myState != ROLE_ALLOCATION) {
+            int robot_num;
+            int robot_list[SEMO_ROBOT_NUM];
+            LIBCALL(leader, get_avail_robot, group, &robot_num, robot_list);
+            myRole = POINT_NUM - 1;
+            for (int i = 0 ; i < robot_num ; i++) {
+                if (robot_list[i] < THIS_ROBOT_ID && myRole > 0) myRole--;
+            }
+            myState = ROLE_ALLOCATION;
+        }
+    } else {
+        myState = ROLE_FINISH;
+    }
+
+    // check and set finish
+    if (leaderId == THIS_ROBOT_ID) {
+        int finish = TRUE;
+        int robot_num;
+        int robot_list[SEMO_ROBOT_NUM];
+        LIBCALL(leader, get_avail_robot, group, &robot_num, robot_list);
+        for (int i = 0 ; i < robot_num ; i++) {
+            int temp_state;
+            LIBCALL(state, get_specific_shared_data_action, robot_list[i], &temp_state);
+            if (temp_state != ROLE_ALLOCATION) {
+                finish = FALSE;
+                break;
+            }
+        }
+        if (finish == TRUE) {
+            leaderState = ROLE_FINISH;
+            LIBCALL(state, set_shared_data_action, &leaderState);
+        }
+    } else {
+        LIBCALL(state, set_shared_data_action, &myState);
+    }
+EXIT_:
+    return result;
+}
+
+uem_result setVector() {
+    uem_result result;
+    int dataLength;
+    int collision;
+    double position[3];
+    double vector[2];
+    double diffusedVector[2];
+    double targetPoint[2];
+
+    result = UFMulticastPort_ReadFromBuffer(position_group, position_port, (unsigned char *)position, sizeof(double) * 3, &dataLength);
+    ERRIFGOTO(result, EXIT_);
+    targetPoint[0] = points[count][0];
+    targetPoint[1] = points[count][1];
+    result = vectorToTarget(targetPoint, position, vector);
+    ERRIFGOTO(result, EXIT_);
+    diffusionVector(&collision, diffusedVector);
+	if (collision == FALSE) {
+		vector[0] *= SCALE_VEL;
+		vector[1] *= SCALE_VEL;
+    } else {
+		diffusedVector[0] *= SCALE_VEL;
+		diffusedVector[1] *= SCALE_VEL;
+	}
+    vectorSum(vector, diffusedVector, vector);
+    if (aroundPoint(targetPoint, position) == TRUE) {
+        if (myRole > count) {
+            count++;
+        } else if (myRole < count) {
+            count--;
+        }
+        if (myRole == count) {
+            vector[0] = 0;
+            vector[1] = 0;
+			collision = FALSE;
+        }
+    }
+    result = setWheelSpeedFromVector(vector, collision);
+EXIT_:
+    return result;
+}
+
+TASK_GO
+{
+    int result;
+    int dataLength;
+    result = allocateRole();
+    ERRIFGOTO(result, EXIT_);
+    if (myRole != -1) {
+        result = setVector();
+    }
+EXIT_:
+    if (result != ERR_UEM_NOERROR) {
+        SEMO_LOG_ERROR("Communication error(%X)", result);
+    }
+}
+
+
+/////////////////////////////////////
+// wrapup code
+/////////////////////////////////////
+
+TASK_WRAPUP
+{
+    // TODO: task wrapup code
+    P3DX_WHEEL vel = {0, 0};
+    int dataNum;
+    UFMulticastPort_WriteToBuffer(wheel_group, wheel_port, (unsigned char *)&vel, sizeof(P3DX_WHEEL), &dataNum);
+}
+
+TASK_CODE_END
