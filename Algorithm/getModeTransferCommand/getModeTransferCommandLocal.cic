@@ -1,14 +1,13 @@
 /************************************
  *
- * File : remoteControlLocal.cic
+ * File : getModeTransferCommandLocal
  *
 *************************************/
 
 /////////////////////////////////////
 // include header section
 /////////////////////////////////////
-#include "semo_direction.h"
-#include <iostream>
+#include <stdio.h>
 TASK_CODE_BEGIN
 
 /////////////////////////////////////
@@ -16,11 +15,14 @@ TASK_CODE_BEGIN
 /////////////////////////////////////
 
 // ##DEFINE_PORT_SECTION::START
-STATIC int direction_group;
-STATIC int direction_port;
+STATIC int mode_port;
 STATIC int group_port;
-STATIC int direction = SEMO_MOVE_STOP;
 // ##DEFINE_PORT_SECTION::END
+typedef enum _MODE {
+    REMOTE_CONTROL,
+    AUTO_CONTROL,
+    NONE
+} MODE;
 
 using namespace std;
 /////////////////////////////////////
@@ -30,8 +32,8 @@ using namespace std;
 TASK_INIT
 {
 // ##INIT_PORT_SECTION::START
-    UFMulticastPort_Initialize(TASK_ID, "direction", &direction_group, &direction_port);
     UFPort_Initialize(TASK_ID, "group", &group_port);
+    UFPort_Initialize(TASK_ID, "mode", &mode_port);
 // ##INIT_PORT_SECTION::END
     
     // TODO: task initialize code
@@ -47,44 +49,41 @@ TASK_GO
     char ch = 0;
     int group;
     int leaderId;
-    int result;
+    uem_result result = ERR_UEM_NOERROR;
     int dataLength;
+    MODE mode = NONE;
     result = UFPort_ReadFromBuffer(group_port, (unsigned char *)&group, sizeof(int), 0 , &dataLength);
     ERRIFGOTO(result, EXIT_);
     if (LIBCALL(leader, get_leader_selection_state, group) == LEADER_SELECTION_SELECTED) {
         leaderId = LIBCALL(leader, get_leader, group);
         if (leaderId == THIS_ROBOT_ID){
-            std::cin >> ch;
-            LIBCALL(KEY_INPUT, set_shared_data_action, &ch);
-            
-        }else {
-            LIBCALL(KEY_INPUT, get_specific_shared_data_action, leaderId, &ch);
-        }
-        if (ch  != 0){
-            switch(ch) {
-                case '8':
-                    direction = SEMO_MOVE_FORWARD;
-                    break;
-                case '4':
-                    direction = SEMO_MOVE_LEFT;
-                    break;
-                case '2':
-                    direction = SEMO_MOVE_BACKWARD;
-                    break;
-                case '6':
-                    direction = SEMO_MOVE_RIGHT;
-                    break;
-                case '5':
-                    direction = SEMO_MOVE_STOP;
-                    break;
-                default:
-                    direction = SEMO_MOVE_STOP;
-                    break;
+            FILE* fs = fopen("command", "a+");
+            if (fs != NULL){
+                if (feof(fs) == 0) {
+                    fgets(&ch, 1, fs);
+                    if (ch  != 0){
+                        switch(ch) {
+                            case 'r':
+                                mode = REMOTE_CONTROL;
+                                break;
+                            case 'a':
+                                mode = AUTO_CONTROL;
+                                break;
+                            default:
+                                SEMO_LOG_ERROR("Wrong Input: %c", ch);
+                                break;
+                        }
+                    }
+                    fseek(fs,0,SEEK_SET);
+                }
+                fclose(fs);
             }
         }
     }
-    result = UFMulticastPort_WriteToBuffer(direction_group, direction_port, (unsigned char *)&direction, sizeof(int), &dataLength);
-    ERRIFGOTO(result, EXIT_);
+    if (mode != NONE) {
+        result = UFPort_WriteToBuffer(mode_port, (unsigned char *)&mode, sizeof(MODE), 0, &dataLength);
+        ERRIFGOTO(result, EXIT_);
+    }
 EXIT_:
     if (result != ERR_UEM_NOERROR) {
         SEMO_LOG_ERROR("Communication error(%X)", result);
