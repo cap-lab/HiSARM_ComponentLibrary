@@ -266,7 +266,7 @@ static uem_result setWheelSpeedFromVector(double *vector, int collision)
     return UFMulticastPort_WriteToBuffer(wheel_group, wheel_port, (unsigned char *)&vel, sizeof(P3DX_WHEEL), &dataNum);
 }
 
-uem_result allocateRole() {
+static uem_result allocateRole() {
     uem_result result;
     int dataLength;
     int leaderId = -1;
@@ -332,7 +332,7 @@ EXIT_:
     return result;
 }
 
-uem_result setVector() {
+static uem_result setVector() {
     uem_result result;
     int dataLength;
     int collision;
